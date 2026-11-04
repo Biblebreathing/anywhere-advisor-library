@@ -31,6 +31,58 @@ The library delivers what students bought in the GoHighLevel funnel. It is also 
 
 In the prototype, data and uploaded files are stored only in the browser (localStorage and IndexedDB).
 
+## The app
+
+A Next.js app in `src/`, backed by Supabase.
+
+| Route | What it is |
+|---|---|
+| `/` | Welcome page. Students who have already entered go straight to `/library` |
+| `/welcome` | Welcome page, always (the "Welcome video" link) |
+| `/login` | Email sign-in link, no password |
+| `/library` | The student's library: every live title, showing what they own |
+| `/library/[slug]` | A title's chapters, lessons, exercises and resources |
+| `/admin` | Staff only: title checklist, students count, give a student access, recent changes |
+| `POST /api/ghl/purchase` | GoHighLevel purchase webhook (see below) |
+
+Database: `supabase/migrations/0001_init.sql` (tables, row-level security, storage buckets) and `supabase/seed.sql` (the three launch titles).
+
+### Setup
+
+**1. Supabase**
+1. Create a project at supabase.com, e.g. `anywhere-advisor-library`.
+2. In **SQL Editor**, run `supabase/migrations/0001_init.sql`, then `supabase/seed.sql`.
+3. In **Authentication → URL Configuration**:
+   - Set **Site URL** to `https://library.theanywhereadvisor.com`.
+   - Add `http://localhost:3000/**` to **Redirect URLs**.
+4. In **Authentication → Emails → Magic Link**, set the link in the template to:
+   ```html
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/library">Sign in to your library</a>
+   ```
+5. In **Authentication → Emails → SMTP Settings**, connect your own email sender. Supabase's built-in sender only allows a few emails an hour.
+6. Make yourself the owner. Sign in once at `/login`, then run:
+   ```sql
+   update public.profiles set role = 'owner' where email = 'YOUR-EMAIL';
+   ```
+
+**2. Environment variables:** copy `.env.example` to `.env.local` (local) or add the same values in Vercel. The Supabase values are in **Project Settings → API**.
+
+**3. Vercel:** import this GitHub repository, add the environment variables, then add the domain `library.theanywhereadvisor.com` under **Domains**.
+
+**4. GoHighLevel**
+1. Create a **Private Integration** token with the contacts scopes and set it as `GHL_API_TOKEN`.
+2. In each purchase workflow, add a **Webhook** action:
+   - URL: `https://library.theanywhereadvisor.com/api/ghl/purchase?secret=YOUR_GHL_WEBHOOK_SECRET`
+   - Custom Data: `title` = `webinar`, `book`, `atomic` or `all`
+   - Custom Data: `grant` = `book`, `course` or `both`
+3. Optional: create a contact custom field (e.g. "Library login link"), put its ID in `GHL_LOGIN_LINK_FIELD_ID`, and include that field in your GHL welcome email. The login email then comes from your own GHL account. Without it, Supabase sends the login email.
+
+**Run locally**
+```bash
+npm install
+npm run dev
+```
+
 ## Production plan
 
 ### Stack (proposed)
@@ -81,7 +133,7 @@ GHL location: `OU1HhJC2zJE9FO6uhfVV`
 
 ### Roadmap
 
-1. **Foundation:** Next.js app, Supabase schema, student magic-link login, admin roles
+1. **Foundation (built):** Next.js app, Supabase schema and security rules, student magic-link login, admin roles, GHL purchase webhook, library and admin overview
 2. **Admin:** title editor, uploads and replacements to storage, version history
 3. **Student library:** welcome page, library, book page, audio player with synced progress, notes, workbook
 4. **Course:** video hosting integration and lesson progress
