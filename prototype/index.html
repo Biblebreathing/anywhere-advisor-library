@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anywhere Advisor Library</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: evening-navy library shelf; one gold accent, matching the 1 Hour Series covers. Fixed player bar at the bottom, sheet for the full player. Deliberately single dark theme. */
+:root{
+  --bg:#0a1322; --surface:#111c31; --raise:#17253f; --line:rgba(217,169,58,.18); --line-soft:rgba(238,241,246,.08);
+  --fg:#eef1f6; --muted:#9ba7bf; --gold:#e0b04a; --gold-hi:#f6d27a; --ink-on-gold:#1a1405;
+  --ok:#6fcf97; --ghl:#7aa7ff;
+  --display:"Playfair Display",Georgia,"Times New Roman",serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:120px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+/* header */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:18px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{flex:none}
+.brand b{font-family:var(--display);font-size:20px;letter-spacing:.02em}
+.brand small{display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.who{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--raise);display:grid;place-items:center;color:var(--gold-hi);font-weight:700;border:1px solid var(--line)}
+
+/* buttons */
+.btn{text-decoration:none;display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 18px;font-weight:600;border:1px solid var(--line);background:var(--raise)}
+.btn:hover{border-color:var(--gold)}
+.btn.gold{background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:var(--ink-on-gold);border-color:transparent}
+.btn.gold:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 12px;font-size:13px}
+
+/* continue hero */
+.hero{display:grid;grid-template-columns:140px 1fr;gap:28px;align-items:center;padding-block:32px}
+.hero img{width:140px;border-radius:4px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.hero h1{font-family:var(--display);font-size:clamp(26px,4vw,38px);line-height:1.1;margin-block:6px 8px}
+.hero .meta{color:var(--muted);margin-bottom:16px}
+.bar{height:4px;background:var(--line-soft);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold)}
+.hero .bar{max-width:420px;margin-bottom:18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* shelf */
+section.block{padding-block:28px;border-top:1px solid var(--line-soft)}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.sec-head h2{font-family:var(--display);font-size:26px}
+.shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.book{display:flex;flex-direction:column;gap:12px;min-width:0}
+.cover{position:relative;display:block;padding:0;border:0;background:none;border-radius:4px;overflow:hidden;box-shadow:0 14px 32px rgba(0,0,0,.45);transition:transform .2s}
+.cover:hover{transform:translateY(-3px)}
+.cover img{display:block;width:100%;aspect-ratio:2/3;object-fit:cover}
+.lock{position:absolute;inset:auto 10px 10px auto;background:rgba(10,19,34,.85);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;display:flex;gap:6px;align-items:center}
+.book h3{font-family:var(--display);font-size:19px;line-height:1.2}
+.book .series{font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;border:1px solid var(--line-soft);color:var(--muted)}
+.pill.own{color:var(--ok);border-color:rgba(111,207,151,.35)}
+.pill.sample{color:var(--gold-hi);border-color:var(--line)}
+
+.bundle{margin-top:28px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:20px 22px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(120deg,rgba(224,176,74,.10),transparent 60%)}
+.bundle h3{font-family:var(--display);font-size:20px}
+
+/* book detail */
+.back{background:none;border:0;color:var(--muted);padding:0;margin-top:22px;font-size:14px}
+.back:hover{color:var(--fg)}
+.detail{display:grid;grid-template-columns:240px minmax(0,1fr);gap:36px;padding-block:22px 10px}
+.detail img.big{width:100%;border-radius:4px;box-shadow:0 20px 44px rgba(0,0,0,.5)}
+.detail h1{font-family:var(--display);font-size:clamp(28px,4.4vw,44px);line-height:1.05;margin-block:8px}
+.detail .tag{font-size:17px;color:var(--muted);max-width:60ch;margin-bottom:18px}
+.formats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-block:18px}
+.fmt{border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;background:var(--surface);text-align:left}
+.fmt b{display:block;font-size:14px}
+.fmt span{font-size:12px;color:var(--muted)}
+.fmt:hover{border-color:var(--gold)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line-soft);margin-top:26px}
+.tabs button{background:none;border:0;padding:10px 14px;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--gold)}
+.chapters{list-style:none;margin:0;padding:0}
+.ch{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line-soft)}
+.ch .n{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+.ch .t{font-weight:600}
+.ch .sub{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted)}
+.ch .sub .bar{flex:1;max-width:220px}
+.ch.now .t{color:var(--gold-hi)}
+.ch.locked .t{color:var(--muted)}
+.playbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--raise);display:grid;place-items:center}
+.playbtn:hover{border-color:var(--gold)}
+.playbtn:disabled{opacity:.4;cursor:not-allowed}
+.done{color:var(--ok)}
+.note-group h4{margin:18px 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+.note{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 12px;border-radius:8px;background:var(--surface);margin-bottom:8px}
+.stamp{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:transparent;color:var(--gold-hi)}
+.note p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.x{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px}
+.x:hover{color:var(--fg)}
+.empty{padding:24px;border:1px dashed var(--line-soft);border-radius:10px;color:var(--muted);text-align:center}
+.res{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.res .fmt{display:flex;justify-content:space-between;gap:10px;align-items:center}
+
+.cta-card{margin-top:28px;padding:22px;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:flex;gap:18px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.cta-card h3{font-family:var(--display);font-size:21px}
+
+/* GHL log */
+.ghl{margin-top:8px}
+.ghl summary{cursor:pointer;font-weight:600;color:var(--ghl);list-style:none;display:flex;gap:8px;align-items:center}
+.ghl summary::-webkit-details-marker{display:none}
+.log{list-style:none;padding:0;margin:14px 0 0;max-height:260px;overflow:auto;border:1px solid var(--line-soft);border-radius:8px}
+.log li{display:grid;grid-template-columns:70px minmax(0,1fr);gap:12px;padding:8px 12px;border-bottom:1px solid var(--line-soft);font-size:13px}
+.log code{font-family:var(--mono);font-size:12px;color:var(--ghl);overflow-wrap:anywhere}
+.demo-note{font-size:12px;color:var(--muted);margin-top:10px;max-width:70ch}
+
+/* mini player */
+.mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(17,28,49,.97);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mini .in{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center}
+.mini img{width:44px;border-radius:3px}
+.mini .open{background:none;border:0;padding:0;text-align:left;min-width:0}
+.mini .ti{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.mini .ct{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.mini .bar{grid-column:1/-1;height:3px}
+.pp{width:46px;height:46px;border-radius:50%;border:0;background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:var(--ink-on-gold);display:grid;place-items:center}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(3,7,14,.6);z-index:30}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;max-height:calc(100% - 24px - env(safe-area-inset-top,0px));overflow:auto;background:var(--surface);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet .in{max-width:640px;margin:0 auto}
+.grab{display:flex;justify-content:space-between;align-items:center}
+.np{display:grid;grid-template-columns:96px minmax(0,1fr);gap:18px;align-items:center;margin-block:14px 18px}
+.np img{width:96px;border-radius:4px}
+.np h2{font-family:var(--display);font-size:22px;line-height:1.15;margin-top:4px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.times{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.ctrls{display:flex;justify-content:center;align-items:center;gap:14px;margin-block:12px}
+.ic{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-soft);background:transparent;display:grid;place-items:center;position:relative}
+.ic:hover{border-color:var(--gold)}
+.ic small{position:absolute;font-size:9px;font-weight:700;bottom:9px}
+.pp.big{width:66px;height:66px}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
+.opts .btn{justify-content:center;padding:9px 6px;font-size:13px}
+.opts select{width:100%;border-radius:999px;padding:9px 10px;background:var(--raise);border:1px solid var(--line);color:var(--fg);font:inherit;font-size:13px;font-weight:600;text-align:center}
+.addnote{margin-top:16px;padding:14px;border-radius:10px;background:var(--raise);border:1px solid var(--line-soft)}
+.addnote textarea{width:100%;min-height:72px;resize:vertical;background:var(--bg);color:var(--fg);border:1px solid var(--line-soft);border-radius:8px;padding:10px;font:inherit}
+.addnote .row{justify-content:space-between;margin-top:10px}
+.chapter-cta{margin-top:16px;padding:16px;border-radius:10px;border:1px solid var(--gold);background:linear-gradient(120deg,rgba(224,176,74,.16),transparent)}
+.chapter-cta b{font-family:var(--display);font-size:18px;display:block;margin-bottom:4px}
+
+/* modal + toast */
+.modal{position:fixed;z-index:41;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px}
+.modal h3{font-family:var(--display);font-size:22px;margin-bottom:8px}
+.modal .row{justify-content:flex-end;margin-top:18px}
+.scrim.top{z-index:40}
+.toast{position:fixed;z-index:50;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--raise);border:1px solid var(--line);padding:10px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px)}
+footer{padding-block:30px;color:var(--muted);font-size:13px;border-top:1px solid var(--line-soft);margin-top:20px}
+
+@media (max-width:760px){
+  .shelf{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  .detail{grid-template-columns:1fr}
+  .detail img.big{width:180px}
+  .hero{grid-template-columns:96px 1fr;gap:18px}
+  .hero img{width:96px}
+  .formats,.res{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* four formats */
+.fmts4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-block:20px 6px}
+.f4{border:1px solid var(--line-soft);border-radius:10px;padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:8px;min-width:0}
+.f4 .k{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.f4 .k svg{color:var(--gold)}
+.f4 .v{font-size:12px;color:var(--muted);flex:1}
+.f4 .bar{height:3px}
+.f4 .btn{justify-content:center;padding:7px 10px;font-size:13px}
+.f4.locked{border-style:dashed}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;border-radius:6px;padding:3px 7px;background:var(--surface);border:1px solid var(--line-soft);color:var(--fg)}
+.chip svg{color:var(--gold)}
+.chip.off{color:var(--muted);border-style:dashed}
+.chip.off svg{color:var(--muted)}
+/* course */
+.video{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:10px;overflow:hidden;background:#050a14;margin-top:18px;display:grid;place-items:center;border:1px solid var(--line-soft)}
+.video img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.22;filter:blur(2px)}
+.video .vin{position:relative;text-align:center;padding:16px}
+.video .vin b{display:block;font-family:var(--display);font-size:clamp(18px,3vw,26px);margin-block:10px 4px}
+.vplay{width:64px;height:64px;border-radius:50%;border:0;background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:var(--ink-on-gold);display:inline-grid;place-items:center}
+.lesson-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-block:12px 6px}
+.chk{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;color:var(--ok);flex:none}
+.chk.on{background:rgba(111,207,151,.15);border-color:var(--ok)}
+.ch.lesson{grid-template-columns:34px minmax(0,1fr) auto}
+.upsell{margin-top:18px;padding:20px;border-radius:10px;border:1px solid var(--gold);background:linear-gradient(120deg,rgba(224,176,74,.14),transparent 70%);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.upsell h3{font-family:var(--display);font-size:20px}
+/* workbook */
+.wbhead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-block:18px 12px}
+.wbhead .bar{width:200px;max-width:100%}
+.ex{border:1px solid var(--line-soft);border-radius:10px;background:var(--surface);margin-bottom:10px}
+.ex summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px}
+.ex summary::-webkit-details-marker{display:none}
+.ex .exn{font-family:var(--mono);font-size:12px;color:var(--gold-hi);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.ex .ext{font-weight:600}
+.ex .exs{font-size:12px;color:var(--muted)}
+.ex .body{padding:0 14px 16px;display:flex;flex-direction:column;gap:12px}
+.ex label{font-size:14px;font-weight:600}
+.ex textarea{width:100%;min-height:76px;resize:vertical;background:var(--bg);color:var(--fg);border:1px solid var(--line-soft);border-radius:8px;padding:10px;font:inherit;margin-top:6px}
+.ex.locked summary{cursor:default;opacity:.7}
+[hidden]{display:none!important}
+a.btn{color:var(--fg)}
+a.btn.gold{color:var(--ink-on-gold)}
+@media (max-width:560px){ .who > span:not(.avatar){display:none} .who{gap:6px} .who .btn{padding:6px 10px;font-size:12px} }
+/* welcome landing */
+.wel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:44px;align-items:center;padding-block:44px 36px}
+.wel h1{font-family:var(--display);font-size:clamp(34px,5vw,56px);line-height:1.04;margin-block:12px 16px}
+.wel h1 em{font-style:normal;color:var(--gold-hi)}
+.wel .lede{font-size:17px;color:var(--muted);max-width:46ch;margin:0 0 24px}
+.wel .skip{display:block;margin-top:14px;font-size:14px;color:var(--muted);background:none;border:0;padding:0;text-align:left}
+.wel .skip:hover{color:var(--fg)}
+.wvid{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(120% 90% at 70% 20%,rgba(224,176,74,.28),transparent 55%),radial-gradient(90% 80% at 10% 100%,rgba(122,167,255,.14),transparent 60%),var(--surface);display:grid;place-items:center;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.wvid .vin{text-align:center;padding:20px}
+.wvid .vplay{width:78px;height:78px}
+.wvid b{display:block;font-family:var(--display);font-size:clamp(18px,2.4vw,24px);margin-top:14px}
+.wvid .dur{position:absolute;right:14px;bottom:12px;font-family:var(--mono);font-size:12px;background:rgba(10,19,34,.8);border:1px solid var(--line-soft);border-radius:6px;padding:2px 8px}
+.wvid .ph{position:absolute;left:14px;top:12px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.inside{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.tile{padding:18px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:8px}
+.tile .ti{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;background:rgba(224,176,74,.12);color:var(--gold)}
+.tile .ti svg{width:18px;height:18px}
+.tile b{font-size:16px}
+.tile span{font-size:14px;color:var(--muted)}
+.wcoll{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.wcoll a{color:inherit;text-decoration:none;display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center}
+.wcoll a:hover b{color:var(--gold-hi)}
+.wcoll b{font-family:var(--display);font-size:18px;line-height:1.15;display:block;margin-top:4px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;counter-reset:s}
+.step{padding:18px 18px 18px 0;border-top:2px solid var(--gold)}
+.step .sn{font-family:var(--mono);font-size:12px;color:var(--gold-hi)}
+.step b{display:block;font-size:17px;margin-block:6px 4px}
+.step span{color:var(--muted);font-size:14px}
+@media (max-width:860px){ .wel{grid-template-columns:1fr;gap:24px;padding-top:28px} .inside{grid-template-columns:repeat(2,minmax(0,1fr))} .wcoll,.steps{grid-template-columns:1fr} }
+/* uniform cover frame */
+.frame{position:relative;display:block;aspect-ratio:2/3;max-width:100%;overflow:hidden;border-radius:4px;background:var(--surface);box-shadow:0 14px 32px rgba(0,0,0,.45)}
+.frame .bgi{position:absolute;inset:-12%;width:124%;height:124%;max-width:none;object-fit:cover;filter:blur(16px) brightness(.55)}
+.frame .fgi{position:relative;display:block;width:100%;height:100%;object-fit:contain}
+.cover .frame{box-shadow:none}
+/* layout toggle */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{background:none;border:0;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--raise);color:var(--fg)}
+/* list layout */
+.list{display:flex;flex-direction:column}
+.lrow{display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-areas:"cover head" "cover fmts";column-gap:32px;padding-block:28px;border-bottom:1px solid var(--line-soft)}
+.lrow:first-child{padding-top:6px}
+.lrow .lc{grid-area:cover;align-self:start;transition:transform .2s}
+.lrow .lc:hover{transform:translateY(-3px)}
+.lrow .lh{grid-area:head;min-width:0}
+.lrow .lh h3{font-family:var(--display);font-size:clamp(22px,3vw,30px);line-height:1.1;margin-block:6px}
+.lrow .lh h3 a{color:inherit;text-decoration:none}
+.lrow .lh h3 a:hover{color:var(--gold-hi)}
+.lrow .lh p{margin:0 0 10px;color:var(--muted);max-width:62ch}
+.lrow .lf{grid-area:fmts;min-width:0}
+.lrow .lf .fmts4{margin-block:8px 0}
+@media (max-width:760px){ .lrow{grid-template-columns:104px minmax(0,1fr);grid-template-areas:"cover head" "fmts fmts";column-gap:16px} .lrow .lh p{font-size:14px} }
+@media (max-width:760px){ .fmts4{grid-template-columns:repeat(2,minmax(0,1fr))} .tabs{overflow-x:auto} .tabs button{white-space:nowrap} }
+/* admin */
+.adm-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-block:28px 20px}
+.adm-top h1{font-family:var(--display);font-size:clamp(28px,4vw,40px);margin-block:6px}
+.adm-top p{margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:8px}
+.stat{padding:16px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--display);font-size:30px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat .sub{font-size:12px}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.trow{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft);color:inherit;text-decoration:none}
+.trow:hover{border-color:var(--gold)}
+.trow img{width:52px;aspect-ratio:2/3;object-fit:cover;border-radius:3px}
+.trow b{font-size:16px}
+.trow .chips{margin-top:6px}
+.cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{padding:18px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h3{font-size:17px}
+.card p{margin:0}
+.fld{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px}
+.inp{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px;font:inherit;font-size:14px;font-weight:400}
+.inp:focus{border-color:var(--gold);outline:none}
+textarea.inp{resize:vertical;min-height:60px}
+.inp.sm{font-size:13px;padding:7px 10px}
+.ecol .fld{margin-bottom:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.fcard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--raise);border:1px solid var(--line-soft);margin-block:6px 10px;min-width:0}
+.fcard b{display:block;font-size:14px;overflow-wrap:anywhere}
+.fcard .muted{font-size:12px}
+.fcard.none{grid-template-columns:1fr;color:var(--muted);border-style:dashed;background:transparent}
+.fi{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:rgba(224,176,74,.12);color:var(--gold)}
+.ed-head{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:18px;align-items:center;padding-block:16px 22px;border-bottom:1px solid var(--line-soft)}
+.ed-head img{width:72px;aspect-ratio:2/3;object-fit:cover;border-radius:4px}
+.ed-head h1{font-family:var(--display);font-size:clamp(24px,3.4vw,34px);line-height:1.1;margin-block:4px 8px}
+.ed{display:grid;grid-template-columns:180px minmax(0,1fr);gap:32px;padding-block:24px}
+.snav{display:flex;flex-direction:column;gap:2px;position:sticky;top:calc(12px + env(safe-area-inset-top,0px));align-self:start}
+.snav button{background:none;border:0;text-align:left;padding:9px 12px;border-radius:8px;color:var(--muted);font-weight:600}
+.snav button:hover{color:var(--fg)}
+.snav button[aria-current="true"]{background:var(--surface);color:var(--fg);box-shadow:inset 2px 0 0 var(--gold)}
+.ph2{font-family:var(--display);font-size:26px;margin-bottom:6px}
+.epane > p.muted{margin-top:0;max-width:62ch}
+.rows{display:flex;flex-direction:column;gap:8px;margin-block:14px}
+.erow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft)}
+.erow .n{font-size:12px;color:var(--gold-hi);padding-top:10px;text-align:center}
+.ecol{display:flex;flex-direction:column;gap:8px;min-width:0}
+.emeta{display:flex;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap}
+.emeta .ok{color:var(--ok);display:inline-flex;gap:4px;align-items:center;overflow-wrap:anywhere}
+.emeta .miss{color:var(--muted)}
+.eact{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.icb{width:30px;height:30px;border-radius:8px;border:1px solid var(--line-soft);background:transparent;color:var(--muted)}
+.icb:hover:not(:disabled){color:var(--fg);border-color:var(--gold)}
+.icb:disabled{opacity:.3;cursor:default}
+.lnk{background:none;border:0;padding:0;color:var(--gold-hi);font-size:12px;font-weight:600;text-decoration:underline}
+.drop{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:18px;border:1.5px dashed var(--line);border-radius:10px;margin-block:14px}
+.drop.over{background:rgba(224,176,74,.08);border-color:var(--gold)}
+label.btn{cursor:pointer}
+label.btn:focus-within{outline:2px solid var(--gold-hi);outline-offset:2px}
+.danger{margin-top:28px;padding:16px;border-radius:10px;border:1px solid rgba(240,110,100,.35);display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.danger-btn{background:#c2453b;border-color:#c2453b;color:#fff}
+.cover-ed{display:grid;grid-template-columns:180px minmax(0,1fr);gap:24px;align-items:start;margin-top:12px}
+.taglist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.taglist code{font-family:var(--mono);font-size:12px;color:var(--ghl);margin-right:6px}
+.how{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.saved{font-size:12px;margin-top:18px;min-height:1em}
+.vers h4{font-size:13px;color:var(--muted);margin:14px 0 6px}
+.log li span b{color:var(--fg)}
+@media (max-width:760px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .cards2,.grid2,.how{grid-template-columns:1fr} .ed{grid-template-columns:1fr;gap:16px} .snav{flex-direction:row;overflow-x:auto;position:static} .snav button{white-space:nowrap} .snav button[aria-current="true"]{box-shadow:inset 0 -2px 0 var(--gold)} .ed-head{grid-template-columns:56px minmax(0,1fr)} .ed-head img{width:56px} .ed-actions{grid-column:1/-1} .cover-ed{grid-template-columns:120px minmax(0,1fr)} .erow{grid-template-columns:30px minmax(0,1fr)} .erow .eact{grid-column:2;justify-content:flex-start} .trow{grid-template-columns:44px minmax(0,1fr)} .trow > .btn{display:none} .trow img{width:44px} }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="#e0b04a" stroke-width="2"/><path d="M17 17 L17 7" stroke="#f6d27a" stroke-width="2.4" stroke-linecap="round"/><path d="M17 17 L24 21" stroke="#e0b04a" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="17" r="2" fill="#f6d27a"/></svg>
+      <div><b>The Anywhere Advisor Library</b><small>Books &amp; audiobooks by Terrance McMahon</small></div>
+    </div>
+    <div class="who"><a class="btn sm ghost" href="#welcome">Welcome video</a><a class="btn sm ghost" href="#" data-golib="1">My library</a><span>Demo Advisor</span><span class="avatar">DA</span></div>
+  </header>
+  <main id="app"></main>
+  <footer>
+    <div class="row" style="justify-content:space-between">
+      <span>Prototype. Audio and course videos are simulated; your narration, lesson videos and PDFs plug in here.</span>
+      <span class="row"><a class="btn sm ghost" href="#admin">Admin</a><button class="btn sm ghost" id="asNew">View as a new buyer</button><button class="btn sm ghost" id="reset">Reset demo</button></span>
+    </div>
+  </footer>
+</div>
+
+<div class="mini" id="mini" hidden></div>
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-label="Audiobook player"></div>
+<div class="scrim top" id="mscrim" hidden></div>
+<div class="modal" id="modal" hidden role="dialog"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const DEFAULT_BOOKS = [
+  { id:"webinar", title:"The 1 Hour Webinar", sub:"for Financial Advisors", series:"The 1 Hour Series™", cover:"webinar.jpg",
+    tag:"How to build a 60-minute, AI-powered webinar that attracts prospects, builds trust and creates qualified appointments.",
+    chapters:[["Introduction: You May Have a Location Problem",9],["From Territory to One-to-Many",16],["The 400/40 Model",14],["A Real Audience Strategy",18],["The Ten Gates of Agreement",24,"Want help mapping the Ten Gates to your own webinar?"],["An Offer Worth Responding To",19,"Ready to replace “free consultation” with a real offer?"],["Your Exact 60-Minute Webinar",26],["The AI-Powered Build Process",21,"Want us to build your webinar with you, using AI?"],["Plan, Create, Practice",15],["Deliver",13],["The Reinvite Engine",17],["Stop Driving Farther. Start Reaching Farther.",8,"You finished the book. Let's put your webinar on the calendar."]],
+    course:"Build Your 1 Hour Webinar",
+    workbook:[
+      ["Draw your circle",0,["Where do most of your clients live today, and how far away is your farthest one?","What would change in your practice if location no longer limited who you could serve?"]],
+      ["Your one-to-many shift",1,["Which conversation do you repeat most often in one-on-one meetings?"]],
+      ["Run your 400/40 numbers",2,["How many people could you invite to a webinar today?","How many attendees would you need to book 10 appointments?"]],
+      ["Define your audience",3,["Describe your ideal attendee in one paragraph: age, situation, the worry that keeps them up at night."]],
+      ["Map the Ten Gates",4,["Which gate does your current presentation skip or rush?"]],
+      ["Build an offer worth responding to",5,["What real result can a prospect get from meeting with you?","Rewrite your “free consultation” as an offer built around that result."]],
+      ["Block out your 60 minutes",6,["List each block of your webinar with the minutes it gets."]],
+      ["Your AI research brief",7,["Write the prompt you'll use to have AI research and outline your topic."]],
+      ["Your practice plan",8,["When will you rehearse, and who will watch and give feedback?"]],
+      ["Delivery-day checklist",9,["What could go wrong on the day, and what's your backup for each?"]],
+      ["Your reinvite sequence",10,["Who gets reinvited after each webinar, and what message do they get?"]],
+      ["Your 90-day webinar calendar",11,["Set the dates and topics of your next three webinars."]]
+    ]},
+  { id:"book", title:"The 1 Hour Book", sub:"for Financial Advisors", series:"The 1 Hour Series™", cover:"book.jpg",
+    tag:"How to write your book in 60 minutes with AI, and turn it into authority, credibility, leads, opportunities and freedom.",
+    chapters:[["Introduction: Why Every Advisor Needs a Book",10],["Authority",15],["Credibility",14],["Leads",17,"Want your book wired into a lead funnel?"],["Opportunities",13],["Freedom",12],["The 60-Minute Method",22],["Writing With AI",20],["From Manuscript to Marketing Asset",16,"You finished the book. Let's map out yours."]],
+    course:"Write Your 1 Hour Book",
+    workbook:[
+      ["Why your book, why now",0,["What do you want your book to do for your practice in the next 12 months?"]],
+      ["Your authority position",1,["What do you want to be known for, in one sentence?"]],
+      ["Your reader",3,["Who exactly is this book for, and what problem do they bring to you?"]],
+      ["Your chapter outline",6,["List your chapter titles in order."]],
+      ["Your AI drafting prompts",7,["Write the prompt you'll use to draft your first chapter with AI."]],
+      ["Your launch plan",8,["How will the book reach prospects: funnel, seminar, webinar, referral partners?"]]
+    ]},
+  { id:"atomic", title:"Atomic Offers", sub:"for Financial Advisors", series:"2027 AI Edition", cover:"atomic.jpg",
+    tag:"How to create an insanely powerful offer your prospects can't refuse. Same principles, a more powerful playbook.",
+    chapters:[["Introduction: The Offer Is the Business",9],["Why “Free Consultation” Fails",14],["Anatomy of an Atomic Offer",19],["Stacking Value",16],["Risk Reversal",13],["Urgency Without Pressure",12],["AI Strategies for 2027",22,"Want help building your Atomic Offer with AI?"],["Launching Your Offer",15,"You finished the book. Let's build your offer together."]],
+    course:"Build Your Atomic Offer",
+    workbook:[
+      ["Audit your current offer",1,["Write your current offer exactly as a prospect hears it today."]],
+      ["The result you sell",2,["What result does a prospect walk away with after working with you?"]],
+      ["Stack your value",3,["List everything included in your offer, with what each piece is worth to the client."]],
+      ["Your risk reversal",4,["What can you promise that removes the prospect's risk of saying yes?"]],
+      ["Your reason to act now",5,["Why should a prospect respond this month and not next year?"]],
+      ["Draft your offer with AI",6,["Paste your AI-assisted offer draft, then mark what you'll keep."]]
+    ]}
+];
+DEFAULT_BOOKS.forEach(b=>{ b.lessons = b.chapters.map((c,i)=>[i===0?"Welcome & how to use this course":c[0].replace(/^Introduction: /,""), Math.max(6,Math.round(c[1]*.55))]).concat([["Live build: put it all together",32]]) });
+const DEFAULT_RES={webinar:["Ten Gates of Agreement checklist","60-minute webinar block template","AI prompt pack for webinar drafting"],book:["Book outline template","AI prompt pack for chapter drafting","Launch checklist"],atomic:["Offer builder worksheet","AI prompt pack for offers","Compliance review checklist"]};
+function normalize(b){ b.status=b.status||"live"; b.files=b.files||{}; b.versions=b.versions||{}; b.resources=b.resources||(DEFAULT_RES[b.id]||[]).map(n=>({name:n})); b.ghl=b.ghl||{}; b.history=b.history||[]; b.workbook=b.workbook||[]; b.lessons=(b.lessons&&b.lessons.length)?b.lessons:[["Welcome",6]]; b.chapters=(b.chapters&&b.chapters.length)?b.chapters:[["Introduction",10]]; b.course=b.course||((b.title||"")+" course"); return b }
+let BOOKS; try{ BOOKS=JSON.parse(localStorage.getItem("aa-catalog")) }catch(e){}
+if(!Array.isArray(BOOKS)||!BOOKS.length) BOOKS=JSON.parse(JSON.stringify(DEFAULT_BOOKS));
+BOOKS.forEach(normalize);
+const saveCatalog=()=>{ try{ localStorage.setItem("aa-catalog",JSON.stringify(BOOKS)) }catch(e){ toast("Couldn't save changes in this browser") } };
+const vis=()=>BOOKS.filter(b=>b.status!=="draft");
+
+const DEMO_NOTES = [
+  {book:"webinar",ch:2,t:312,text:"400/40: invite 400, expect about 40 live. Run my numbers against my current list size."},
+  {book:"webinar",ch:4,t:605,text:"Gate 3 is where my current seminar loses people. Rework the opening story."}
+];
+const FRESH = () => ({v:2, owned:{webinar:true}, course:{webinar:true}, pos:{webinar:{ch:4,t:640}}, done:{webinar:[0,1,2,3]},
+  lessons:{webinar:[0,1,2,3]}, curLesson:{webinar:4},
+  wb:{webinar:{0:{0:"Most clients are within 40 minutes of my office. Farthest is 2 hours away, a referral.",1:"I could run a retirement-income webinar for people anywhere in the state, not just my county."},1:{0:"How Social Security timing affects retirement income. I explain it 5–6 times a week."},2:{0:"About 1,100 contacts in my CRM plus 300 past seminar attendees.",1:"At a 10% booking rate from attendees, about 100 live attendees."}}}, wbDone:{webinar:[0,1,2]},
+  notes:DEMO_NOTES.map((n,i)=>({...n,id:"d"+i})), last:"webinar", speed:1,
+  log:[{at:"Day 1",tag:"purchase · aa-webinar-owner (from funnel order form)"},{at:"Day 1",tag:"purchase · aa-webinar-course (funnel upsell)"},{at:"Day 1",tag:"portal_account_created · login link emailed"},{at:"Day 2",tag:"aa-webinar-started"},{at:"Day 3",tag:"aa-webinar-workbook-ex03-complete"},{at:"Day 4",tag:"aa-webinar-ch04-complete"}]});
+
+let S; try{ S = JSON.parse(localStorage.getItem("aa-lib2")) }catch(e){}
+if(!S || S.v!==2) S = FRESH();
+const save = ()=>{ try{ localStorage.setItem("aa-lib2", JSON.stringify(S)) }catch(e){} };
+
+let pendingTab=null, playing=false, sheetOpen=false, sleep={mode:"off",left:0}, noteDraft=null, ctaShown=null, tab="audio";
+const $ = s=>document.querySelector(s);
+const B = id=>BOOKS.find(b=>b.id===id);
+const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = s=>{s=Math.max(0,Math.floor(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=String(s%60).padStart(2,"0");return h?`${h}:${String(m).padStart(2,"0")}:${x}`:`${m}:${x}`};
+const dur = (b,ch)=>B(b).chapters[ch][1]*60;
+const totalDur = b=>B(b).chapters.reduce((a,c)=>a+c[1]*60,0);
+const canPlay = (b,ch)=>S.owned[b] || ch===0;
+const bookPct = b=>{const p=S.pos[b]; if(!p) return 0; let el=0; for(let i=0;i<p.ch;i++) el+=dur(b,i); return Math.min(100,(el+p.t)/totalDur(b)*100)};
+const leftStr = b=>{const p=S.pos[b]; let el=0; if(p){for(let i=0;i<p.ch;i++) el+=dur(b,i); el+=p.t} const r=totalDur(b)-el; const h=Math.floor(r/3600), m=Math.round(r%3600/60); return (h?h+" hr ":"")+m+" min"};
+const slug = b=>"aa-"+b;
+const pad = n=>String(n).padStart(2,"0");
+const chLabel = ch=>ch===0?"Introduction":"Chapter "+ch;
+const hm = mins=>{mins=Math.round(mins);const h=Math.floor(mins/60),m=mins%60;return (h?h+" hr ":"")+m+" min"};
+const lessonsDone = b=>(S.lessons[b]||[]).length;
+const wbDone = b=>(S.wbDone[b]||[]).length;
+function log(tag){ S.log.unshift({at:new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}),tag}); S.log=S.log.slice(0,50); save(); const l=$("#log"); if(l) l.innerHTML=logHTML(); const c=$("#logCount"); if(c) c.textContent=S.log.length; }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2600) }
+
+const I = {
+  play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  pause:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
+  lock:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  back:n=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/></svg><small>${n}</small>`,
+  fwd:n=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg><small>${n}</small>`,
+  prev:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>',
+  next:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>',
+  check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg>',
+  pdf:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>',
+  audio:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="3" y="14" width="4" height="7" rx="1"/><rect x="17" y="14" width="4" height="7" rx="1"/></svg>',
+  wb:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M8 10h8M8 14h8M8 18h5"/></svg>',
+  course:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M10 9v6l5-3z" fill="currentColor"/></svg>'
+};
+
+/* ---------- views ---------- */
+function render(){
+  const h = location.hash.slice(1);
+  const id = h.startsWith("b-") ? h.slice(2) : null;
+  if(h==="welcome" || (!h && !S.welcomed)){ $("#app").innerHTML = welcomeView(); $("#mini").hidden=true; return }
+  $("#app").innerHTML = id && B(id) ? bookView(B(id)) : libraryView();
+  renderMini();
+}
+function logHTML(){ return S.log.map(l=>`<li><span class="muted mono">${esc(l.at)}</span><code>${esc(l.tag)}</code></li>`).join("") }
+function ghlPanel(){ return `<section class="block"><details class="ghl"><summary>What GoHighLevel sees from this advisor (<span id="logCount">${S.log.length}</span> events)</summary>
+  <ul class="log" id="log">${logHTML()}</ul>
+  <p class="demo-note">Every event becomes a tag or field on the contact in GHL. Your workflows decide what happens next: a text after a key chapter, a call invite when the course is finished, a nudge when someone stalls on the workbook.</p></details></section>` }
+
+function chips(b){
+  const own=S.owned[b.id], c=S.course[b.id];
+  const chip=(on,ic,label)=>`<span class="chip ${on?"":"off"}">${on?ic:I.lock} ${label}</span>`;
+  return `<div class="chips">${chip(own,I.pdf,"PDF")}${chip(own,I.audio,"Audiobook")}${chip(own,I.wb,"Workbook")}${chip(c,I.course,"Course")}</div>`;
+}
+
+function welcomeView(){
+  const back = S.welcomed;
+  const tile=(ic,k,v)=>`<div class="tile"><span class="ti">${ic}</span><b>${k}</b><span>${v}</span></div>`;
+  return `<section class="wel">
+    <div><div class="eyebrow">The Anywhere Advisor Library</div>
+      <h1>Welcome to your <em>library</em></h1>
+      <p class="lede">Books, courses and resources that help financial advisors build authority, run one-to-many marketing and book more appointments with AI, from anywhere.</p>
+      <div class="row"><button class="btn gold" data-enter="1">${back?"Back to my library":"Enter the library"}</button><button class="btn ghost" data-wplay="1">${I.play} Watch the welcome</button></div>
+      ${back?"":`<button class="skip" data-enter="1">Already a student? Skip the intro →</button>`}
+    </div>
+    <div class="wvid"><span class="ph">Welcome video</span><div class="vin"><button class="vplay" data-wplay="1" aria-label="Play welcome video">${I.play}</button><b>A welcome from Terrance McMahon</b><span class="muted">How to get the most from your library</span></div><span class="dur">3:00</span></div>
+  </section>
+  <section class="block"><div class="sec-head"><h2>What's inside</h2><span class="muted">Every book comes as a complete package</span></div>
+    <div class="inside">${tile(I.pdf,"Books","Read online or download the PDF, stamped with your email.")}${tile(I.audio,"Audiobooks","Listen anywhere. Picks up where you left off, with notes by chapter.")}${tile(I.wb,"Workbooks","Exercises for every chapter. Your answers save as you go.")}${tile(I.course,"Courses","Video lessons that walk you through building it, step by step.")}</div>
+    <p class="demo-note">Plus resources with every title: AI prompt packs, templates and checklists.</p></section>
+  <section class="block"><div class="sec-head"><h2>The collection</h2><span class="muted">${vis().length} titles · more coming</span></div>
+    <div class="wcoll">${vis().map(b=>`<a href="#b-${b.id}" data-enterbook="${b.id}">${frame(b)}<span><span class="eyebrow">${esc(b.series)}</span><b>${esc(b.title)}</b><span class="muted" style="font-size:13px">${esc(b.sub)}</span></span></a>`).join("")}</div></section>
+  <section class="block"><div class="sec-head"><h2>How to use it</h2></div>
+    <div class="steps"><div class="step"><span class="sn">STEP 1</span><b>Read or listen</b><span>Start with the book or audiobook. Save notes at the moments that matter.</span></div><div class="step"><span class="sn">STEP 2</span><b>Do the workbook</b><span>Answer each chapter's exercise and apply it to your own practice.</span></div><div class="step"><span class="sn">STEP 3</span><b>Build it with the course</b><span>Follow the video lessons to put your webinar, book or offer into action.</span></div></div>
+    <div class="row" style="margin-top:26px"><button class="btn gold" data-enter="1">${back?"Back to my library":"Enter the library"}</button></div></section>`;
+}
+const lay = ()=>S.layout||"list";
+const frame = b=>`<span class="frame"><img class="bgi" src="${coverURL(b)}" alt=""><img class="fgi" src="${coverURL(b)}" alt="${esc(b.title)} cover"></span>`;
+function listHTML(){
+  return `<div class="list">${vis().map(b=>`<article class="lrow">
+    <a class="lc" href="#b-${b.id}">${frame(b)}</a>
+    <div class="lh"><div class="row"><span class="eyebrow">${esc(b.series)}</span>${S.owned[b.id]?`<span class="pill own">${I.check} Owned</span>`:`<span class="pill">${I.lock} Not unlocked</span>`}</div>
+      <h3><a href="#b-${b.id}">${esc(b.title)}</a> <span class="muted" style="font-size:.55em;font-family:var(--body);font-weight:500">${esc(b.sub)}</span></h3>
+      <p>${esc(b.tag)}</p>
+      ${S.owned[b.id]?"":`<div class="row" style="margin-bottom:6px"><button class="btn gold sm" data-unlock="book:${b.id}">Unlock</button><button class="btn sm ghost" data-sample="${b.id}">${I.play} Free chapter</button></div>`}</div>
+    <div class="lf">${formatCards(b).replace(/data-tab="(\w+)"/g,`data-open="${b.id}:$1"`)}</div>
+  </article>`).join("")}</div>`;
+}
+function libraryView(){
+  const lb = S.last && B(S.last) ? B(S.last) : null, p = lb && S.pos[lb.id];
+  const hero = lb && p ? `<section class="hero">
+      <img src="${coverURL(lb)}" alt="${esc(lb.title)} cover">
+      <div><div class="eyebrow">Continue listening</div>
+        <h1>${esc(lb.title)}</h1>
+        <div class="meta">${chLabel(p.ch)}: ${esc(lb.chapters[p.ch][0])} · <span class="mono">${fmt(p.t)}</span> of ${fmt(dur(lb.id,p.ch))}</div>
+        <div class="bar"><i style="width:${bookPct(lb.id)}%"></i></div>
+        <div class="row"><button class="btn gold" data-resume="${lb.id}">${I.play} Resume</button><a class="btn ghost" href="#b-${lb.id}">Course, workbook &amp; notes</a><span class="muted">${leftStr(lb.id)} left</span></div>
+      </div></section>` : `<section class="hero" style="grid-template-columns:1fr"><div><div class="eyebrow">Welcome</div><h1>Your library</h1><div class="meta">Each book comes with a PDF, an audiobook and a workbook. Add the course to build it with Terrance step by step.</div></div></section>`;
+  const allDone = vis().every(b=>S.owned[b.id]&&S.course[b.id]);
+  return hero + `<section class="block"><div class="sec-head"><h2>Your library</h2><div class="row"><span class="muted">Every book: PDF · audiobook · workbook · course</span><span class="seg" role="group" aria-label="Layout"><button data-layout="list" aria-pressed="${lay()==="list"}">List</button><button data-layout="shelf" aria-pressed="${lay()==="shelf"}">Shelf</button></span></div></div>
+    ${lay()==="list"?listHTML():""}<div class="shelf" ${lay()==="list"?"hidden":""}>${vis().map(b=>`<div class="book">
+      <a class="cover" href="#b-${b.id}">${frame(b)}${S.owned[b.id]?"":`<span class="lock">${I.lock} Locked</span>`}</a>
+      <div><div class="series">${esc(b.series)}</div><h3>${esc(b.title)}</h3></div>
+      ${chips(b)}
+      ${S.owned[b.id] ? `<div class="row"><a class="btn sm" href="#b-${b.id}">Open</a>${S.course[b.id]?`<span class="muted" style="font-size:12px">Course ${lessonsDone(b.id)}/${b.lessons.length} · Workbook ${wbDone(b.id)}/${b.workbook.length}</span>`:`<button class="btn gold sm" data-unlock="course:${b.id}">Add the course</button>`}</div>`
+        : `<div class="row"><button class="btn gold sm" data-unlock="book:${b.id}">Unlock</button><button class="btn sm ghost" data-sample="${b.id}">${I.play} Free chapter</button></div>`}
+    </div>`).join("")}</div>
+    ${allDone?"":`<div class="bundle"><div><div class="eyebrow">Complete the collection</div><h3>All three books, all three courses</h3><div class="muted">Every PDF, audiobook, workbook and course in the library.</div></div><button class="btn gold" data-unlock="all">Unlock everything</button></div>`}
+    </section>
+    <section class="block"><div class="cta-card"><div><div class="eyebrow">Ready to put this to work?</div><h3>Book a strategy call with Terrance's team</h3><div class="muted">Get your webinar, book or offer built with you, not just explained to you.</div></div><button class="btn gold" data-call="library">Book a call</button></div></section>` + ghlPanel();
+}
+
+function formatCards(b){
+  const own=S.owned[b.id], co=S.course[b.id], p=S.pos[b.id];
+  const audMins=b.chapters.reduce((a,c)=>a+c[1],0), lesMins=b.lessons.reduce((a,c)=>a+c[1],0);
+  const card=(on,ic,k,v,pct,btn)=>`<div class="f4 ${on?"":"locked"}"><div class="k">${ic} ${k}</div><div class="v">${v}</div>${pct!=null?`<div class="bar"><i style="width:${pct}%"></i></div>`:""}${btn}</div>`;
+  return `<div class="fmts4">
+    ${card(own,I.pdf,"Ebook (PDF)", own?"Stamped with your email":"Included with the book", null, own?`<button class="btn" data-dl="${esc(b.title)} (PDF)">Download PDF</button>`:`<button class="btn" data-unlock="book:${b.id}">${I.lock} Unlock</button>`)}
+    ${card(own,I.audio,"Audiobook", own?(p?leftStr(b.id)+" left":hm(audMins)+" · narrated"):"Chapter 1 free", own?bookPct(b.id):null, `<button class="btn" data-resume="${b.id}">${I.play} ${p?"Resume":own?"Listen":"Free chapter"}</button>`)}
+    ${card(own,I.wb,"Workbook", own?`${wbDone(b.id)} of ${b.workbook.length} exercises done`:`${b.workbook.length} exercises`, own?wbDone(b.id)/b.workbook.length*100:null, `<button class="btn" data-tab="wb">${own?"Open workbook":"Preview"}</button>`)}
+    ${card(co,I.course,"Course", co?`${lessonsDone(b.id)} of ${b.lessons.length} lessons · ${hm(lesMins)}`:`${b.lessons.length} video lessons · ${hm(lesMins)}`, co?lessonsDone(b.id)/b.lessons.length*100:null, co?`<button class="btn" data-tab="course">Continue course</button>`:`<button class="btn gold" data-tab="course">Add the course</button>`)}
+  </div>`;
+}
+
+function audioTab(b){
+  const own=S.owned[b.id], p=S.pos[b.id], done=S.done[b.id]||[];
+  return `<ol class="chapters">${b.chapters.map((c,i)=>{
+      const isNow = p && p.ch===i, ok=canPlay(b.id,i), d=done.includes(i);
+      const pct = d?100: isNow? p.t/dur(b.id,i)*100 : 0;
+      return `<li class="ch ${isNow?"now":""} ${ok?"":"locked"}"><span class="n">${i===0?"Intro":i}</span>
+        <div style="min-width:0"><div class="t">${esc(c[0])}</div><div class="sub"><span class="mono">${Math.max(1,Math.round(c[1]))} min</span>${d?`<span class="done">${I.check}</span>`:""}${pct&&!d?`<span class="bar"><i style="width:${pct}%"></i></span>`:""}${!own&&i===0?`<span class="pill sample">Free sample</span>`:""}${!ok?`<span>${I.lock}</span>`:""}</div></div>
+        <button class="playbtn" data-play="${b.id}:${i}" ${ok?"":"disabled"} aria-label="Play ${esc(c[0])}">${I.play}</button></li>`}).join("")}</ol>`;
+}
+
+function courseTab(b){
+  const co=S.course[b.id], done=S.lessons[b.id]||[];
+  const cur = Math.min(S.curLesson[b.id]??0, b.lessons.length-1);
+  const L=b.lessons[cur], viewable = co || cur===0;
+  const list = `<ol class="chapters">${b.lessons.map((l,i)=>{ const ok=co||i===0, d=done.includes(i);
+    return `<li class="ch lesson ${i===cur?"now":""} ${ok?"":"locked"}"><span class="chk ${d?"on":""}">${d?I.check:""}</span>
+      <div style="min-width:0"><div class="t">${i===b.lessons.length-1?"Bonus · ":"Lesson "+(i+1)+" · "}${esc(l[0])}</div><div class="sub"><span class="mono">${l[1]} min video</span>${!co&&i===0?`<span class="pill sample">Free preview</span>`:""}${!ok?`<span>${I.lock}</span>`:""}</div></div>
+      <button class="playbtn" data-lesson="${b.id}:${i}" ${ok?"":"disabled"} aria-label="Open lesson ${i+1}">${I.play}</button></li>`}).join("")}</ol>`;
+  const player = viewable ? `<div class="video"><img src="${coverURL(b)}" alt=""><div class="vin"><button class="vplay" data-vplay="${b.id}" aria-label="Play lesson video">${I.play}</button><b>${esc(L[0])}</b><span class="muted">${esc(b.course)} · Lesson ${cur+1} of ${b.lessons.length} · ${L[1]} min</span></div></div>
+    <div class="lesson-bar"><span class="muted" style="font-size:13px">Pairs with ${chLabel(Math.min(cur,b.chapters.length-1)).toLowerCase()} of the audiobook and workbook exercise${b.workbook.some(w=>w[1]===cur)?"":"s"} for this section.</span>
+      ${co?`<button class="btn sm ${done.includes(cur)?"":"gold"}" data-lessondone="${b.id}:${cur}">${done.includes(cur)?I.check+" Completed":"Mark complete & next"}</button>`:""}</div>` : "";
+  const ups = co?"":`<div class="upsell"><div><div class="eyebrow">Upgrade</div><h3>${esc(b.course)}</h3><div class="muted">${b.lessons.length} video lessons that walk you through building it step by step, plus a live-build bonus session.</div></div><button class="btn gold" data-unlock="course:${b.id}">Add the course</button></div>`;
+  return ups + player + list;
+}
+
+function workbookTab(b){
+  const own=S.owned[b.id], ans=(S.wb[b.id]=S.wb[b.id]||{}), dn=S.wbDone[b.id]||[];
+  const head = `<div class="wbhead"><div><b>${wbDone(b.id)} of ${b.workbook.length} exercises complete</b><div class="bar" style="margin-top:6px"><i style="width:${wbDone(b.id)/b.workbook.length*100}%"></i></div></div>
+    <div class="row">${own?`<button class="btn sm" data-dl="${esc(b.title)} Workbook (printable PDF)">${I.pdf} Printable PDF</button><button class="btn sm" data-copywb="${b.id}">Copy my answers</button>`:`<button class="btn gold sm" data-unlock="book:${b.id}">Unlock the workbook</button>`}</div></div>`;
+  const items = b.workbook.map((ex,i)=>{ const ok=own, d=dn.includes(i);
+    if(!ok) return `<div class="ex locked"><summary><span class="exn">${pad(i+1)}</span><span><span class="ext">${esc(ex[0])}</span><br><span class="exs">With ${chLabel(ex[1]).toLowerCase()}</span></span>${I.lock}</summary></div>`;
+    return `<details class="ex" ${i===dn.length?"open":""}><summary><span class="exn">${pad(i+1)}</span><span><span class="ext">${esc(ex[0])}</span><br><span class="exs">${ex[1]===0?"With the "+esc(b.chapters[0][0]).replace("Introduction: ","introduction: "):"With chapter "+ex[1]+": "+esc(b.chapters[ex[1]][0])}</span></span>${d?`<span class="chk on">${I.check}</span>`:`<span class="chk"></span>`}</summary>
+      <div class="body">${ex[2].map((q,qi)=>`<label for="wb-${b.id}-${i}-${qi}">${esc(q)}<textarea id="wb-${b.id}-${i}-${qi}" data-wb="${b.id}:${i}:${qi}" placeholder="Your answer">${esc(ans[i]?.[qi]||"")}</textarea></label>`).join("")}
+        <div class="row" style="justify-content:space-between"><button class="btn sm ghost" data-play="${b.id}:${ex[1]}">${I.play} Listen to this chapter</button><button class="btn sm ${d?"":"gold"}" data-wbdone="${b.id}:${i}">${d?I.check+" Completed":"Mark exercise complete"}</button></div></div></details>`}).join("");
+  return head + items + (own?`<p class="demo-note">Answers save as you type. In the live portal they're stored in the advisor's account, so they follow them to any device.</p>`:"");
+}
+
+function notesTab(b){
+  const notes=S.notes.filter(n=>n.book===b.id).sort((x,y)=>x.ch-y.ch||x.t-y.t);
+  const byCh = {}; notes.forEach(n=>(byCh[n.ch]=byCh[n.ch]||[]).push(n));
+  return notes.length ? Object.keys(byCh).map(ch=>`<div class="note-group"><h4>${chLabel(+ch)}: ${esc(b.chapters[ch][0])}</h4>${byCh[ch].map(n=>`<div class="note"><button class="stamp" data-jump="${b.id}:${n.ch}:${n.t}">${fmt(n.t)}</button><p>${esc(n.text)}</p><button class="x" data-del="${n.id}" aria-label="Delete note">×</button></div>`).join("")}</div>`).join("") + `<div class="row" style="margin-top:12px"><button class="btn sm" data-copy="${b.id}">Copy all notes</button></div>`
+    : `<div class="empty">No notes yet. While listening, tap “Add note” in the player to save a thought at that exact moment.</div>`;
+}
+
+function bookView(b){
+  const own=S.owned[b.id];
+  const notesN=S.notes.filter(n=>n.book===b.id).length;
+  const T=[["audio","Audiobook"],["course","Course"],["wb","Workbook"],["res",`Resources (${b.resources.length})`],["notes",`My notes (${notesN})`]];
+  return `<button class="back" onclick="location.hash=''">← Library</button>
+  <section class="detail"><div><img class="big" src="${coverURL(b)}" alt="${esc(b.title)} cover"></div>
+    <div style="min-width:0"><div class="eyebrow">${esc(b.series)}</div><h1>${esc(b.title)} <span class="muted" style="font-size:.5em;font-family:var(--body);font-weight:500">${esc(b.sub)}</span></h1>
+      <p class="tag">${esc(b.tag)}</p>
+      ${own?"":`<div class="row"><button class="btn gold" data-unlock="book:${b.id}">Unlock PDF, audiobook &amp; workbook</button><button class="btn ghost" data-unlock="bookcourse:${b.id}">Book + course</button></div>`}
+      ${formatCards(b)}
+      <div class="tabs" role="tablist">${T.map(t=>`<button role="tab" aria-selected="${tab===t[0]}" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>
+      ${tab==="audio"?audioTab(b): tab==="course"?courseTab(b): tab==="wb"?workbookTab(b): tab==="res"?resTab(b): notesTab(b)}
+      <p class="demo-note">Chapter, lesson and exercise titles are drafted from the cover copy. Swap in the final content.</p>
+    </div></section>` + ghlPanel();
+}
+
+/* ---------- player ---------- */
+function cur(){ const b=S.last; return b && S.pos[b] && B(b) && B(b).chapters[S.pos[b].ch] ? {b, ch:S.pos[b].ch, t:S.pos[b].t} : null }
+function startPlay(b,ch,t){
+  if(!canPlay(b,ch)){ openUnlock("book:"+b); return }
+  if(!S.pos[b]) log(`${slug(b)}-started`);
+  S.pos[b]={ch, t:t??0}; S.last=b; playing=true; ctaShown=null; save(); render(); if(sheetOpen) renderSheet();
+}
+function renderMini(){
+  const c=cur(), m=$("#mini"); if(!c){ m.hidden=true; return }
+  const bk=B(c.b), d=dur(c.b,c.ch); m.hidden=false;
+  m.innerHTML=`<div class="in"><img src="${coverURL(bk)}" alt=""><button class="open" id="openSheet"><span class="ti">${esc(bk.chapters[c.ch][0])}</span><span class="ct">${esc(bk.title)} · <span class="mono">${fmt(c.t)} / ${fmt(d)}</span>${S.speed!==1?" · "+S.speed+"×":""}${sleep.mode!=="off"?" · sleep "+(sleep.mode==="end"?"end of chapter":fmt(sleep.left)):""}</span></button><button class="pp" id="mpp" aria-label="${playing?"Pause":"Play"}">${playing?I.pause:I.play}</button><div class="bar"><i style="width:${c.t/d*100}%"></i></div></div>`;
+}
+function renderSheet(){
+  const c=cur(), sh=$("#sheet"); if(!c) return;
+  const bk=B(c.b), d=dur(c.b,c.ch), cta=ctaShown;
+  const ex = bk.workbook.findIndex(w=>w[1]===c.ch);
+  sh.innerHTML=`<div class="in"><div class="grab"><span class="eyebrow">Now playing</span><button class="btn sm ghost" id="closeSheet">Close</button></div>
+    <div class="np"><img src="${coverURL(bk)}" alt=""><div style="min-width:0"><div class="muted" style="font-size:13px">${esc(bk.title)} · ${chLabel(c.ch)}</div><h2>${esc(bk.chapters[c.ch][0])}</h2></div></div>
+    <input type="range" id="scrub" min="0" max="${d}" step="1" value="${Math.floor(c.t)}" aria-label="Position">
+    <div class="times mono"><span id="tnow">${fmt(c.t)}</span><span id="tleft">-${fmt(d-c.t)}</span></div>
+    <div class="ctrls"><button class="ic" data-skipch="-1" aria-label="Previous chapter">${I.prev}</button><button class="ic" data-skip="-15" aria-label="Back 15 seconds">${I.back(15)}</button>
+      <button class="pp big" id="spp" aria-label="${playing?"Pause":"Play"}">${playing?I.pause:I.play}</button>
+      <button class="ic" data-skip="30" aria-label="Forward 30 seconds">${I.fwd(30)}</button><button class="ic" data-skipch="1" aria-label="Next chapter">${I.next}</button></div>
+    <div class="opts"><button class="btn" id="speed">Speed ${S.speed}×</button>
+      <select id="sleepSel" aria-label="Sleep timer">${[["off","Sleep timer"],["900","Sleep in 15 min"],["1800","Sleep in 30 min"],["end","End of chapter"]].map(o=>`<option value="${o[0]}" ${String(sleep.mode)===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select>
+      <button class="btn" id="noteBtn">Add note</button></div>
+    ${noteDraft!==null?`<div class="addnote"><label for="noteTxt" class="muted" style="font-size:13px">Note at <span class="mono">${fmt(noteDraft)}</span> · ${esc(bk.chapters[c.ch][0])}</label><textarea id="noteTxt" placeholder="What do you want to remember or apply?"></textarea><div class="row"><button class="btn sm ghost" id="noteCancel">Cancel</button><button class="btn sm gold" id="noteSave">Save note</button></div></div>`:""}
+    ${S.owned[c.b]&&ex>=0?`<div class="row" style="margin-top:14px;justify-content:space-between"><span class="muted" style="font-size:13px">${I.wb} Workbook exercise ${ex+1} goes with this chapter: ${esc(bk.workbook[ex][0])}</span><button class="btn sm" data-gowb="${c.b}">Open exercise</button></div>`:""}
+    ${cta?`<div class="chapter-cta"><b>${esc(cta)}</b><div class="muted" style="margin-bottom:12px">Book 15 minutes with Terrance's team.</div><button class="btn gold sm" data-call="${c.b}-ch${c.ch}">Book a strategy call</button></div>`:""}
+    ${!S.owned[c.b]?`<div class="chapter-cta"><b>You're listening to the free chapter</b><div class="muted" style="margin-bottom:12px">Unlock the PDF, full audiobook and workbook.</div><button class="btn gold sm" data-unlock="book:${c.b}">Unlock ${esc(bk.title)}</button></div>`:""}
+  </div>`;
+  const ta=$("#noteTxt"); if(ta) ta.focus();
+}
+function openSheet(){ sheetOpen=true; $("#sheet").hidden=false; $("#scrim").hidden=false; renderSheet() }
+function closeSheet(){ sheetOpen=false; noteDraft=null; $("#sheet").hidden=true; $("#scrim").hidden=true }
+
+function chapterDone(b,ch){
+  S.done[b]=S.done[b]||[]; if(!S.done[b].includes(ch)){ S.done[b].push(ch); log(`${slug(b)}-ch${pad(ch)}-complete`); }
+  const c=B(b).chapters[ch];
+  if(ch===B(b).chapters.length-1 && S.owned[b]) log(`${slug(b)}-audiobook-finished → workflow: strategy-call invite`);
+  if(c[2] && S.owned[b]){ ctaShown=c[2]; log(`${slug(b)}-ch${pad(ch)} CTA shown`); }
+  if(sleep.mode==="end"){ playing=false; sleep={mode:"off",left:0}; toast("Sleep timer: paused at end of chapter"); }
+  const nx=ch+1;
+  if(nx<B(b).chapters.length && canPlay(b,nx)){ S.pos[b]={ch:nx,t:0}; }
+  else { S.pos[b].t=dur(b,ch); playing=false; if(!S.owned[b]) log(`${slug(b)}-sample-finished → workflow: unlock offer`); }
+  save(); render(); if(sheetOpen) renderSheet();
+}
+let saveTick=0;
+setInterval(()=>{
+  if(!playing) return; const c=cur(); if(!c) return;
+  const p=S.pos[c.b]; p.t+=0.25*S.speed;
+  if(sleep.mode!=="off" && sleep.mode!=="end"){ sleep.left-=0.25; if(sleep.left<=0){ playing=false; sleep={mode:"off",left:0}; toast("Sleep timer: paused. Your place is saved."); render(); if(sheetOpen) renderSheet(); return } }
+  if(p.t>=dur(c.b,c.ch)){ chapterDone(c.b,c.ch); return }
+  if(++saveTick%8===0) save();
+  renderMini();
+  if(sheetOpen){ const s=$("#scrub"); if(s && document.activeElement!==s){ s.value=Math.floor(p.t) } const d=dur(c.b,c.ch); $("#tnow").textContent=fmt(p.t); $("#tleft").textContent="-"+fmt(d-p.t) }
+},250);
+
+/* ---------- unlock ---------- */
+function openUnlock(key){
+  const [kind,id]=key.split(":"), bk=id?B(id):null;
+  const T={ all:["Unlock everything","All three books and all three courses: every PDF, audiobook, workbook and video lesson."],
+    book:[`Unlock ${bk?.title}`,"PDF ebook, full audiobook and workbook."],
+    course:[`Add ${bk?.course}`,`${bk?.lessons.length} video lessons that walk you through it step by step, plus a live-build bonus session.`],
+    bookcourse:[`${bk?.title} + course`,"PDF, audiobook, workbook and the full video course."] }[kind];
+  $("#modal").innerHTML=`<h3>${esc(T[0])}</h3><p class="muted">${esc(T[1])} One click, charged to the card you used at checkout.</p>
+    <p class="demo-note">In the live portal this runs a GoHighLevel one-click order. Price comes from your GHL product.</p>
+    <div class="row"><button class="btn ghost" id="mCancel">Not now</button><button class="btn gold" id="mOk" data-key="${key}">Unlock now</button></div>`;
+  $("#modal").hidden=false; $("#mscrim").hidden=false;
+  log(`${kind==="all"?"aa-everything":slug(id)+"-"+kind}-offer-viewed`);
+}
+function closeModal(){ $("#modal").hidden=true; $("#mscrim").hidden=true }
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,a"); if(!t) return; const d=t.dataset;
+  if(d.resume){ const p=S.pos[d.resume]; startPlay(d.resume, p?p.ch:0, p?p.t:0); openSheet(); }
+  else if(d.play){ const [b,ch]=d.play.split(":"); startPlay(b,+ch, S.pos[b]&&S.pos[b].ch===+ch?S.pos[b].t:0); if(canPlay(b,+ch)) openSheet(); }
+  else if(d.sample){ startPlay(d.sample,0,0); openSheet(); }
+  else if(d.jump){ const [b,ch,tt]=d.jump.split(":"); startPlay(b,+ch,+tt); openSheet(); }
+  else if(d.enter||d.golib){ e.preventDefault(); if(!S.welcomed) log("library-entered"); S.welcomed=true; save(); if(location.hash) location.hash=""; else render(); window.scrollTo(0,0); }
+  else if(d.enterbook){ S.welcomed=true; save(); }
+  else if(d.wplay){ toast("Live portal: plays your welcome video here"); log("welcome-video-played"); }
+  else if(d.layout){ S.layout=d.layout; save(); render(); }
+  else if(d.open){ const [b,tb]=d.open.split(":"); pendingTab=tb; location.hash="b-"+b; }
+  else if(d.unlock){ openUnlock(d.unlock) }
+  else if(d.tab){ tab=d.tab; render(); const tb=document.querySelector(".tabs"); if(tb) tb.scrollIntoView({block:"start",behavior:"smooth"}) }
+  else if(d.gowb){ closeSheet(); tab="wb"; if(location.hash!=="#b-"+d.gowb){ pendingTab="wb"; location.hash="b-"+d.gowb } else render(); }
+  else if(d.lesson){ const [b,i]=d.lesson.split(":"); S.curLesson[b]=+i; save(); render(); document.querySelector(".video")?.scrollIntoView({block:"center",behavior:"smooth"}) }
+  else if(d.vplay){ const b=d.vplay, i=S.curLesson[b]??0; toast("Live portal: plays your lesson video here"); log(`${slug(b)}-course-lesson${pad(i+1)}-started`); }
+  else if(d.lessondone){ const [b,i]=d.lessondone.split(":").map((x,k)=>k?+x:x); S.lessons[b]=S.lessons[b]||[]; if(!S.lessons[b].includes(i)){ S.lessons[b].push(i); log(`${slug(b)}-course-lesson${pad(i+1)}-complete`); if(S.lessons[b].length===B(b).lessons.length) log(`${slug(b)}-course-finished → workflow: implementation-call invite`); } S.curLesson[b]=Math.min(i+1,B(b).lessons.length-1); save(); render(); }
+  else if(d.wbdone){ const [b,i]=d.wbdone.split(":").map((x,k)=>k?+x:x); S.wbDone[b]=S.wbDone[b]||[]; if(!S.wbDone[b].includes(i)){ S.wbDone[b].push(i); log(`${slug(b)}-workbook-ex${pad(i+1)}-complete`); if(S.wbDone[b].length===B(b).workbook.length) log(`${slug(b)}-workbook-finished → workflow: review-my-plan call offer`); toast("Exercise complete"); } save(); render(); }
+  else if(d.copywb){ const b=B(d.copywb), a=S.wb[b.id]||{}; const txt=b.workbook.map((ex,i)=>`${pad(i+1)}. ${ex[0]}\n`+ex[2].map((q,qi)=>`Q: ${q}\nA: ${a[i]?.[qi]||"—"}`).join("\n")).join("\n\n"); navigator.clipboard?.writeText(b.title+" Workbook\n\n"+txt).then(()=>toast("Answers copied"),()=>toast("Copy is blocked here. Select the text to copy it.")) }
+  else if(d.del){ S.notes=S.notes.filter(n=>n.id!==d.del); save(); render() }
+  else if(d.copy){ const bk=B(d.copy); const txt=S.notes.filter(n=>n.book===d.copy).sort((x,y)=>x.ch-y.ch||x.t-y.t).map(n=>`[${bk.chapters[n.ch][0]} @ ${fmt(n.t)}] ${n.text}`).join("\n"); navigator.clipboard?.writeText(bk.title+" notes\n\n"+txt).then(()=>toast("Notes copied"),()=>toast("Copy is blocked here. Select the notes to copy them.")) }
+  else if(d.dl){ toast("Live portal: downloads “"+d.dl+"”"); log("download · "+d.dl) }
+  else if(d.call){ log(`book-call-clicked · source: ${d.call} → GHL calendar`); toast("Live portal: opens your GHL booking calendar") }
+  else if(t.id==="openSheet") openSheet();
+  else if(t.id==="closeSheet") closeSheet();
+  else if(t.id==="mpp"||t.id==="spp"){ playing=!playing; save(); renderMini(); if(sheetOpen) renderSheet(); }
+  else if(d.skip){ const c=cur(); S.pos[c.b].t=Math.max(0,Math.min(dur(c.b,c.ch)-1,c.t+ +d.skip)); save(); renderMini(); renderSheet(); }
+  else if(d.skipch){ const c=cur(), n=c.ch+ +d.skipch; if(n>=0 && n<B(c.b).chapters.length){ if(canPlay(c.b,n)){ S.pos[c.b]={ch:n,t:0}; ctaShown=null; save(); render(); renderSheet(); } else { closeSheet(); openUnlock("book:"+c.b) } } }
+  else if(t.id==="speed"){ const sp=[0.75,1,1.25,1.5,1.75,2]; S.speed=sp[(sp.indexOf(S.speed)+1)%sp.length]; save(); renderMini(); renderSheet(); }
+  else if(t.id==="noteBtn"){ noteDraft=cur().t; renderSheet(); }
+  else if(t.id==="noteCancel"){ noteDraft=null; renderSheet(); }
+  else if(t.id==="noteSave"){ const txt=$("#noteTxt").value.trim(); if(!txt){ toast("Write something first"); return } const c=cur(); S.notes.push({id:"n"+Date.now(),book:c.b,ch:c.ch,t:noteDraft,text:txt}); log(`${slug(c.b)}-note-added (ch${c.ch})`); noteDraft=null; save(); render(); renderSheet(); toast("Note saved"); }
+  else if(t.id==="mCancel") closeModal();
+  else if(t.id==="mOk"){ const [kind,id]=d.key.split(":");
+    if(kind==="all") BOOKS.forEach(b=>{S.owned[b.id]=true;S.course[b.id]=true});
+    if(kind==="book"||kind==="bookcourse") S.owned[id]=true;
+    if(kind==="course"||kind==="bookcourse") S.course[id]=true;
+    log(`purchase · ${kind==="all"?"aa-everything":slug(id)+"-"+kind} → workflow: welcome + access email`); save(); closeModal(); closeSheet(); toast("Unlocked. It's in your library."); render(); }
+  else if(t.id==="asNew"){ S={v:2,owned:{webinar:true},course:{},pos:{},done:{},lessons:{},curLesson:{},wb:{},wbDone:{},notes:[],last:null,speed:1,log:[{at:"now",tag:"purchase · aa-webinar-owner (from funnel order form)"},{at:"now",tag:"portal_account_created · login link emailed"}]}; playing=false; save(); closeSheet(); location.hash=""; render(); toast("Showing a new buyer of The 1 Hour Webinar who skipped the course upsell"); }
+  else if(t.id==="reset"){ S=FRESH(); playing=false; save(); closeSheet(); location.hash=""; render(); toast("Demo reset"); }
+});
+let wbSave;
+document.addEventListener("input",e=>{
+  if(e.target.id==="scrub"){ const c=cur(); S.pos[c.b].t=+e.target.value; renderMini(); $("#tnow").textContent=fmt(c.t); }
+  const w=e.target.dataset?.wb; if(w){ const [b,i,q]=w.split(":"); S.wb[b]=S.wb[b]||{}; S.wb[b][i]=S.wb[b][i]||{}; S.wb[b][i][q]=e.target.value; clearTimeout(wbSave); wbSave=setTimeout(save,400); }
+});
+document.addEventListener("change",e=>{ if(e.target.id==="scrub") save(); if(e.target.id==="sleepSel"){ const v=e.target.value; sleep = v==="off"?{mode:"off",left:0}: v==="end"?{mode:"end",left:0}:{mode:v,left:+v}; renderMini(); if(v!=="off") toast(v==="end"?"Will pause at the end of this chapter":"Will pause in "+(+v/60)+" minutes"); } });
+$("#scrim").addEventListener("click",closeSheet); $("#mscrim").addEventListener("click",closeModal);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ if(!$("#modal").hidden) closeModal(); else if(sheetOpen) closeSheet(); } });
+window.addEventListener("hashchange",()=>{ tab=pendingTab||"audio"; pendingTab=null; render(); window.scrollTo(0,0) });
+
+</script>
+<script>
+/* ===== Admin portal + file storage ===== */
+let SITE; try{ SITE=JSON.parse(localStorage.getItem("aa-site")) }catch(e){}
+SITE = Object.assign({welcome:null, callUrl:"", ghlLocation:"OU1HhJC2zJE9FO6uhfVV"}, SITE||{});
+if(!SITE.ghlLocation) SITE.ghlLocation="OU1HhJC2zJE9FO6uhfVV";
+const saveSite=()=>{ try{ localStorage.setItem("aa-site",JSON.stringify(SITE)) }catch(e){} };
+const URLS={};
+let dbp=null;
+function db(){ if(!dbp) dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open("aa-files",1); r.onupgradeneeded=()=>r.result.createObjectStore("f"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) }catch(e){ rej(e) } }); return dbp }
+async function idbPut(id,blob){ try{ const d=await db(); await new Promise((res,rej)=>{ const t=d.transaction("f","readwrite"); t.objectStore("f").put(blob,id); t.oncomplete=res; t.onerror=()=>rej(t.error) }); return true }catch(e){ return false } }
+async function idbLoadAll(){ try{ const d=await db(); await new Promise(res=>{ const rq=d.transaction("f","readonly").objectStore("f").openCursor(); rq.onsuccess=()=>{ const c=rq.result; if(c){ URLS[c.key]=URL.createObjectURL(c.value); c.continue() } else res() }; rq.onerror=()=>res() }) }catch(e){} }
+
+function placeholderCover(b){
+  const words=String(b.title||"New title").toUpperCase().split(/\s+/), lines=[]; let cur="";
+  words.forEach(w=>{ if((cur+" "+w).trim().length>11 && cur){ lines.push(cur); cur=w } else cur=(cur+" "+w).trim() }); if(cur) lines.push(cur);
+  const t=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const y0=300-(lines.length-1)*26;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"><defs><radialGradient id="g" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="#22385e"/><stop offset="1" stop-color="#0b1424"/></radialGradient></defs><rect width="400" height="600" fill="url(#g)"/><rect x="18" y="18" width="364" height="564" fill="none" stroke="#e0b04a" stroke-opacity=".45"/>${lines.map((l,i)=>`<text x="200" y="${y0+i*52}" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="42" fill="#f6d27a">${t(l)}</text>`).join("")}<text x="200" y="540" text-anchor="middle" font-family="Georgia,serif" font-size="17" letter-spacing="4" fill="#eef1f6">TERRANCE McMAHON</text><text x="200" y="80" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" letter-spacing="3" fill="#9ba7bf">COVER COMING SOON</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+function coverURL(b){ return (b.coverFile && URLS[b.coverFile.id]) || b.cover || placeholderCover(b) }
+function resTab(b){
+  if(!b.resources.length) return `<div class="empty">No resources for this title yet.</div>`;
+  const own=S.owned[b.id];
+  return `<div class="res">${b.resources.map(r=>`<button class="fmt" ${own?`data-dl="${esc(r.name)}"`:`data-unlock="book:${b.id}"`}><span><b>${esc(r.name)}</b><span>${own?"Download":"Included when you unlock"}</span></span>${own?"":I.lock}</button>`).join("")}</div>`;
+}
+
+/* ----- real audio for chapters that have an uploaded file ----- */
+const AU=new Audio(); let lastSync=null;
+setInterval(()=>{
+  const c=cur(); const ch=c&&B(c.b)&&B(c.b).chapters[c.ch]; const m=ch&&ch[3]; const u=m&&URLS[m.id];
+  if(!u){ if(!AU.paused) AU.pause(); lastSync=null; return }
+  if(AU.dataset.fid!==m.id){ AU.src=u; AU.dataset.fid=m.id; lastSync=null }
+  AU.playbackRate=S.speed;
+  const p=S.pos[c.b];
+  if(lastSync===null || Math.abs(p.t-lastSync)>1.2){ try{ AU.currentTime=p.t }catch(e){} }
+  else if(!AU.paused){ p.t=AU.currentTime }
+  lastSync=p.t;
+  if(playing && AU.paused) AU.play().catch(()=>{}); else if(!playing && !AU.paused) AU.pause();
+},100);
+
+/* ----- real welcome + lesson video when uploaded ----- */
+document.addEventListener("click",e=>{
+  const w=e.target.closest("[data-wplay]");
+  if(w && SITE.welcome && URLS[SITE.welcome.id]){ e.stopImmediatePropagation(); const box=document.querySelector(".wvid"); if(box){ box.innerHTML=`<video controls autoplay playsinline src="${URLS[SITE.welcome.id]}" style="width:100%;height:100%;object-fit:contain;background:#000"></video>`; box.scrollIntoView({block:"center",behavior:"smooth"}) } log("welcome-video-played"); return }
+  const v=e.target.closest("[data-vplay]");
+  if(v){ const b=B(v.dataset.vplay), i=S.curLesson[b.id]??0, L=b.lessons[i], src=L&&L[2];
+    if(src&&src.id&&URLS[src.id]){ e.stopImmediatePropagation(); const box=document.querySelector(".video"); box.innerHTML=`<video controls autoplay playsinline src="${URLS[src.id]}" style="position:absolute;inset:0;width:100%;height:100%;background:#000"></video>`; log(`${slug(b.id)}-course-lesson${pad(i+1)}-started`) }
+    else if(src&&src.url){ e.stopImmediatePropagation(); const box=document.querySelector(".video .vin"); box.innerHTML=`<b>${esc(L[0])}</b><a class="btn gold" href="${esc(src.url)}" target="_blank" rel="noopener">Open lesson video</a>`; log(`${slug(b.id)}-course-lesson${pad(i+1)}-started`) }
+  }
+},true);
+
+/* ----- routing ----- */
+const SECS=[["details","Details"],["cover","Cover"],["pdf","Ebook PDF"],["audio","Audiobook"],["workbook","Workbook"],["course","Course"],["res","Resources"],["offers","Offers & GHL"]];
+let admSec="details", confirmDel=null, confirmReset=false;
+const baseRender=render;
+render=function(){
+  const h=location.hash.slice(1);
+  if(h==="admin"||h.startsWith("admin-")){
+    $("#mini").hidden=true;
+    const b=h.startsWith("admin-")?B(h.slice(6)):null;
+    $("#app").innerHTML=b?adminEditor(b):adminHome();
+    return;
+  }
+  baseRender();
+};
+
+/* ----- helpers ----- */
+const now=()=>new Date().toISOString();
+const size=n=>n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";
+const day=iso=>new Date(iso).toLocaleDateString([], {month:"short",day:"numeric"});
+function hist(b,what){ b.history.unshift({at:now(),what}); b.history=b.history.slice(0,80) }
+function upBtn(kind,label,accept,multi){ return `<label class="btn sm">${label}<input type="file" hidden data-up="${kind}" accept="${accept}" ${multi?"multiple":""}></label>` }
+function fileCard(m,kind){
+  const ic=kind==="audio"?I.audio:kind==="video"?I.course:kind==="image"?I.pdf:I.pdf;
+  if(!m) return `<div class="fcard none">No file uploaded yet</div>`;
+  const here=!!URLS[m.id];
+  return `<div class="fcard"><span class="fi">${ic}</span><span style="min-width:0"><b>${esc(m.name)}</b><span class="muted">${size(m.size)}${m.dur?" · "+fmt(m.dur):""} · uploaded ${day(m.at)}</span></span>${here&&(kind==="audio"||kind==="video")?`<button class="lnk" data-a="prev" data-id="${m.id}" data-k="${kind}">Preview</button>`:""}</div>`;
+}
+function verList(b,key,label){
+  const v=(b.versions[key]||[]); if(!v.length) return "";
+  return `<div class="vers"><h4>Previous versions</h4>${v.map((m,i)=>`<div class="fcard"><span class="fi">${I.pdf}</span><span style="min-width:0"><b>${esc(m.name)}</b><span class="muted">${size(m.size)} · uploaded ${day(m.at)}</span></span><button class="btn sm ghost" data-a="restore" data-k="${key}" data-i="${i}" data-l="${label}">Restore</button></div>`).join("")}</div>`;
+}
+function bfld(b,label,path,val,ph,area){ return `<label class="fld"><span>${label}</span>${area?`<textarea class="inp" rows="2" data-f="${path}" data-b="${b.id}" placeholder="${esc(ph||"")}">${esc(val||"")}</textarea>`:`<input class="inp" data-f="${path}" data-b="${b.id}" value="${esc(val||"")}" placeholder="${esc(ph||"")}">`}</label>` }
+function sfld(label,key,ph){ return `<label class="fld"><span>${label}</span><input class="inp" data-site="${key}" value="${esc(SITE[key]||"")}" placeholder="${esc(ph||"")}"></label>` }
+function mv(k,i,n){ return `<button class="icb" data-a="up" data-k="${k}" data-i="${i}" ${i===0?"disabled":""} aria-label="Move up">↑</button><button class="icb" data-a="down" data-k="${k}" data-i="${i}" ${i===n-1?"disabled":""} aria-label="Move down">↓</button><button class="icb" data-a="rm" data-k="${k}" data-i="${i}" aria-label="Remove">×</button>` }
+function compChips(b){
+  const cf=b.chapters.filter(c=>c[3]).length, lv=b.lessons.filter(l=>l[2]).length;
+  const ch=(ok,label)=>`<span class="chip ${ok?"":"off"}">${ok?I.check:"○"} ${label}</span>`;
+  return `<div class="chips">${ch(!!(b.coverFile||b.cover),"Cover")}${ch(!!b.files.pdf,"PDF")}${ch(cf>0&&cf===b.chapters.length,`Audio ${cf}/${b.chapters.length}`)}${ch(b.workbook.length>0,`Workbook ${b.workbook.length}`)}${ch(lv>0&&lv===b.lessons.length,`Course videos ${lv}/${b.lessons.length}`)}${ch(b.resources.length>0&&b.resources.every(r=>r.file),`Resources ${b.resources.filter(r=>r.file).length}/${b.resources.length}`)}</div>`;
+}
+const listOf=(b,k)=>({ch:b.chapters,wb:b.workbook,ls:b.lessons,rs:b.resources})[k];
+
+/* ----- admin home ----- */
+function adminHome(){
+  const live=vis().length, draft=BOOKS.length-live;
+  let ct=0,cf=0,lt=0,lv=0,pdf=0; BOOKS.forEach(b=>{ b.chapters.forEach(c=>{ct++; if(c[3]) cf++}); b.lessons.forEach(l=>{lt++; if(l[2]) lv++}); if(b.files.pdf) pdf++ });
+  const stat=(n,k,s)=>`<div class="stat"><b>${n}</b><span>${k}</span>${s?`<span class="sub">${s}</span>`:""}</div>`;
+  const changes=BOOKS.flatMap(b=>b.history.map(h=>({...h,t:b.title}))).sort((x,y)=>x.at<y.at?1:-1).slice(0,12);
+  return `<section class="adm-top"><div><div class="eyebrow">Admin · only you and your team see this</div><h1>Manage your library</h1><p class="muted">Add titles, upload and replace files, and see what's missing before a title goes live.</p></div>
+    <div class="row"><button class="btn gold" data-a="newtitle">+ Add a title</button><a class="btn ghost" href="#" data-golib="1">View as student</a></div></section>
+  <div class="stats">${stat(live,"Live titles",draft?draft+" in draft":"No drafts")}${stat(`${pdf}/${BOOKS.length}`,"Ebook PDFs uploaded")}${stat(`${cf}/${ct}`,"Audio chapters uploaded")}${stat(`${lv}/${lt}`,"Course videos added")}</div>
+  <section class="block"><div class="sec-head"><h2>Titles</h2><span class="muted">Open a title to edit its files and content</span></div>
+    <div class="tlist">${BOOKS.map(b=>`<a class="trow" href="#admin-${b.id}"><img src="${coverURL(b)}" alt=""><span style="min-width:0"><span class="row" style="gap:8px"><b>${esc(b.title)}</b><span class="pill ${b.status==="draft"?"":"own"}">${b.status==="draft"?"Draft":"Live"}</span></span>${compChips(b)}</span><span class="btn sm">Edit</span></a>`).join("")}</div></section>
+  <section class="block"><div class="sec-head"><h2>Site settings</h2></div>
+    <div class="cards2">
+      <div class="card"><h3>Welcome video</h3><p class="muted">Plays on the welcome page for new students.</p>${fileCard(SITE.welcome,"video")}<div class="row">${upBtn("welcome",SITE.welcome?"Replace video":"Upload video","video/*")}</div></div>
+      <div class="card"><h3>Booking &amp; GoHighLevel</h3>${sfld("Booking calendar link (GHL)","callUrl","https://…")}${sfld("GHL location ID","ghlLocation","Settings → Business Profile")}<p class="demo-note" style="margin:0">Every “Book a call” button uses this link. Student activity goes to this GHL location as tags.</p></div>
+    </div><p class="saved muted" id="saveState"></p></section>
+  <section class="block"><div class="sec-head"><h2>Recent changes</h2></div>
+    ${changes.length?`<ul class="log">${changes.map(c=>`<li><span class="muted mono">${day(c.at)}</span><span><b>${esc(c.t)}</b> · ${esc(c.what)}</span></li>`).join("")}</ul>`:`<div class="empty">No changes yet. Uploads, replacements and edits show up here.</div>`}</section>
+  <section class="block"><div class="sec-head"><h2>How this works when it's live</h2></div>
+    <div class="how">
+      <div class="card"><h3>Where files live</h3><p class="muted">Audio, PDFs and resources go to cloud storage. Course videos go to a video host such as Bunny Stream, Vimeo or Wistia. Students stream audio and video and never get a raw file link, so files can't be passed around.</p></div>
+      <div class="card"><h3>Replacing a file</h3><p class="muted">Upload the new version and every student gets it right away. Their place in the audiobook, notes and workbook answers stay, because they belong to the chapter, not the file. Old versions are kept so you can roll back.</p></div>
+      <div class="card"><h3>How students get access</h3><p class="muted">A purchase in your GHL funnel fires a webhook to the library, which unlocks the right title and emails a login link. Unlocks inside the library run as GHL one-click orders.</p></div>
+      <div class="card"><h3>Who can get into admin</h3><p class="muted">You and the team members you invite, each with a role: Owner (everything) or Editor (content only). Admin login is separate from student login.</p></div>
+    </div>
+    <div class="empty" style="margin-top:14px;text-align:left">In this prototype, files you upload are saved in this browser only, so you can try the whole flow. Nothing leaves your computer.
+      <div class="row" style="margin-top:10px">${confirmReset?`<button class="btn sm ghost" data-a="resetno">Keep my changes</button><button class="btn sm danger-btn" data-a="resetyes">Restore the sample catalog</button>`:`<button class="btn sm ghost" data-a="reset">Restore the sample catalog</button>`}</div></div></section>`;
+}
+
+/* ----- title editor ----- */
+function adminEditor(b){
+  return `<button class="back" data-a="home">← All titles</button>
+  <section class="ed-head"><img src="${coverURL(b)}" alt=""><div style="min-width:0"><div class="eyebrow">${esc(b.series||"New title")}</div><h1>${esc(b.title)}</h1>${compChips(b)}</div>
+    <div class="row ed-actions"><span class="seg" role="group" aria-label="Status"><button data-a="status" data-v="live" aria-pressed="${b.status!=="draft"}">Live</button><button data-a="status" data-v="draft" aria-pressed="${b.status==="draft"}">Draft</button></span><a class="btn sm ghost" href="#b-${b.id}" data-enterbook="${b.id}">Preview as student</a></div></section>
+  <div class="ed"><nav class="snav" aria-label="Sections">${SECS.map(s=>`<button data-a="sec" data-v="${s[0]}" aria-current="${admSec===s[0]}">${s[1]}</button>`).join("")}</nav>
+    <div class="epane" style="min-width:0">${secView(b)}<p class="saved muted" id="saveState"></p></div></div>`;
+}
+function secView(b){
+  switch(admSec){
+  case "details": return `<h2 class="ph2">Details</h2>
+    <div class="grid2">${bfld(b,"Title","title",b.title)}${bfld(b,"Subtitle","sub",b.sub)}${bfld(b,"Series or edition","series",b.series,"e.g. The 1 Hour Series™")}${bfld(b,"Course name","course",b.course)}</div>
+    ${bfld(b,"One-line description","tag",b.tag,"Shown on the library page under the title",true)}
+    <div class="danger"><div><b>Delete this title</b><div class="muted">Removes it from the library for everyone. Students who own it lose access.</div></div>${confirmDel===b.id?`<div class="row"><button class="btn sm ghost" data-a="delno">Keep it</button><button class="btn sm danger-btn" data-a="delyes">Delete permanently</button></div>`:`<button class="btn sm" data-a="del">Delete title</button>`}</div>`;
+  case "cover": return `<h2 class="ph2">Cover</h2>
+    <div class="cover-ed"><span>${frame(b)}</span><div><p class="muted" style="margin-top:0">Upload the front cover only, at least 1600 × 2400 px. Every cover shows at the same size in the library.</p>
+      ${b.coverFile?fileCard(b.coverFile,"image"):""}
+      <div class="row">${upBtn("cover:"+b.id,(b.coverFile||b.cover)?"Replace cover":"Upload cover","image/*")}${b.coverFile&&b.cover?`<button class="btn sm ghost" data-a="rmcover">Go back to the original</button>`:""}</div></div></div>`;
+  case "pdf": return `<h2 class="ph2">Ebook PDF</h2><p class="muted">Students read it online or download a copy stamped with their email.</p>
+    ${fileCard(b.files.pdf,"pdf")}<div class="row">${upBtn("pdf:"+b.id,b.files.pdf?"Replace PDF":"Upload PDF","application/pdf,.pdf,.epub")}</div>${verList(b,"pdf","ebook PDF")}`;
+  case "audio": return `<h2 class="ph2">Audiobook</h2><p class="muted">One audio file per chapter (MP3 or M4A). Replacing a file keeps every student's place and notes.</p>
+    <div class="drop" data-drop="bulk:${b.id}"><b>Bulk upload</b><span class="muted">Drop all the chapter files here. They're matched to chapters in filename order (01-intro.mp3, 02-…), and new chapters are added if you upload more files than there are chapters.</span>${upBtn("bulk:"+b.id,"Choose files","audio/*",true)}</div>
+    <div class="rows">${b.chapters.map((c,i)=>`<div class="erow"><span class="n mono">${i===0?"Intro":i}</span>
+      <div class="ecol"><input class="inp" data-f="ch.${i}.0" data-b="${b.id}" value="${esc(c[0])}" aria-label="Chapter title">
+        <div class="emeta">${c[3]?`<span class="ok">${I.check} ${esc(c[3].name)} · ${fmt(c[1]*60)}</span>${URLS[c[3].id]?`<button class="lnk" data-a="prev" data-id="${c[3].id}" data-k="audio">Preview</button>`:""}`:`<span class="miss">No audio yet · sample length ${Math.round(c[1])} min</span>`}</div>
+        <input class="inp sm" data-f="ch.${i}.2" data-b="${b.id}" value="${esc(c[2]||"")}" placeholder="Call-to-action when this chapter ends (optional)" aria-label="Chapter call-to-action"></div>
+      <div class="eact">${upBtn(`ch:${b.id}:${i}`,c[3]?"Replace":"Upload","audio/*")}${mv("ch",i,b.chapters.length)}</div></div>`).join("")}</div>
+    <button class="btn sm" data-a="add" data-k="ch">+ Add chapter</button>`;
+  case "workbook": return `<h2 class="ph2">Workbook</h2><p class="muted">Exercises students fill in online, each tied to a chapter. Add a printable PDF for students who like paper.</p>
+    ${fileCard(b.files.wbpdf,"pdf")}<div class="row">${upBtn("wbpdf:"+b.id,b.files.wbpdf?"Replace printable PDF":"Upload printable PDF","application/pdf,.pdf")}</div>${verList(b,"wbpdf","printable workbook")}
+    <div class="rows">${b.workbook.map((x,i)=>`<div class="erow"><span class="n mono">${pad(i+1)}</span><div class="ecol">
+      <input class="inp" data-f="wb.${i}.0" data-b="${b.id}" value="${esc(x[0])}" aria-label="Exercise title">
+      <label class="fld"><span>Goes with</span><select class="inp" data-f="wb.${i}.1" data-b="${b.id}">${b.chapters.map((c,ci)=>`<option value="${ci}" ${ci==x[1]?"selected":""}>${chLabel(ci)}: ${esc(c[0])}</option>`).join("")}</select></label>
+      <label class="fld"><span>Questions, one per line</span><textarea class="inp" rows="3" data-f="wb.${i}.2" data-b="${b.id}">${esc(x[2].join("\n"))}</textarea></label></div>
+      <div class="eact">${mv("wb",i,b.workbook.length)}</div></div>`).join("")||`<div class="empty">No exercises yet.</div>`}</div>
+    <button class="btn sm" data-a="add" data-k="wb">+ Add exercise</button>`;
+  case "course": return `<h2 class="ph2">Course</h2><div class="grid2">${bfld(b,"Course name","course",b.course)}</div>
+    <p class="muted">Upload each lesson video, or paste a link from your video host.</p>
+    <div class="rows">${b.lessons.map((l,i)=>`<div class="erow"><span class="n mono">${pad(i+1)}</span><div class="ecol">
+      <input class="inp" data-f="ls.${i}.0" data-b="${b.id}" value="${esc(l[0])}" aria-label="Lesson title">
+      <div class="emeta">${l[2]&&l[2].id?`<span class="ok">${I.check} ${esc(l[2].name)}${l[2].dur?" · "+fmt(l[2].dur):""}</span>${URLS[l[2].id]?`<button class="lnk" data-a="prev" data-id="${l[2].id}" data-k="video">Preview</button>`:""}`:l[2]&&l[2].url?`<span class="ok">${I.check} Linked video</span>`:`<span class="miss">No video yet</span>`}</div>
+      <div class="grid2" style="margin:0;grid-template-columns:minmax(0,1fr) 110px"><input class="inp sm" data-f="ls.${i}.url" data-b="${b.id}" value="${esc(l[2]&&l[2].url||"")}" placeholder="…or paste a Vimeo, Wistia or Bunny link" aria-label="Video link"><input class="inp sm" type="number" min="1" data-f="ls.${i}.1" data-b="${b.id}" value="${Math.round(l[1])}" aria-label="Minutes"></div></div>
+      <div class="eact">${upBtn(`lesson:${b.id}:${i}`,l[2]&&l[2].id?"Replace":"Upload","video/*")}${mv("ls",i,b.lessons.length)}</div></div>`).join("")}</div>
+    <button class="btn sm" data-a="add" data-k="ls">+ Add lesson</button>`;
+  case "res": return `<h2 class="ph2">Resources</h2><p class="muted">Templates, checklists and AI prompt packs. Students who own the title can download them.</p>
+    <div class="rows">${b.resources.map((r,i)=>`<div class="erow"><span class="n mono">${pad(i+1)}</span><div class="ecol">
+      <input class="inp" data-f="rs.${i}.name" data-b="${b.id}" value="${esc(r.name)}" aria-label="Resource name">
+      <div class="emeta">${r.file?`<span class="ok">${I.check} ${esc(r.file.name)} · ${size(r.file.size)}</span>`:`<span class="miss">No file yet</span>`}</div></div>
+      <div class="eact">${upBtn(`res:${b.id}:${i}`,r.file?"Replace":"Upload","*/*")}${mv("rs",i,b.resources.length)}</div></div>`).join("")||`<div class="empty">No resources yet.</div>`}</div>
+    <button class="btn sm" data-a="add" data-k="rs">+ Add resource</button>`;
+  case "offers": return `<h2 class="ph2">Offers &amp; GoHighLevel</h2><p class="muted">Connect this title to the products in your GHL account so purchases unlock it automatically.</p>
+    <div class="grid2">${bfld(b,"GHL product: book","ghl.book",b.ghl.book,"Product ID")}${bfld(b,"GHL product: course","ghl.course",b.ghl.course,"Product ID")}${bfld(b,"One-click order form link","ghl.order",b.ghl.order,"https://…")}${bfld(b,"Sales page link","ghl.sales",b.ghl.sales,"https://…")}</div>
+    <div class="card" style="margin-top:10px"><h3>Tags this title sends to GHL</h3><ul class="taglist">
+      <li><code>aa-${b.id}-owner</code> bought the book</li><li><code>aa-${b.id}-course</code> bought the course</li><li><code>aa-${b.id}-ch05-complete</code> finished a chapter</li><li><code>aa-${b.id}-workbook-ex05-complete</code> finished an exercise</li><li><code>aa-${b.id}-course-lesson05-complete</code> finished a lesson</li><li><code>aa-${b.id}-audiobook-finished</code> finished the audiobook</li></ul></div>`;
+  }
+  return "";
+}
+
+/* ----- editing ----- */
+let saveT;
+function setPath(b,path,val){
+  const p=path.split(".");
+  if(p[0]==="ch") b.chapters[+p[1]][+p[2]]=val;
+  else if(p[0]==="wb"){ const x=b.workbook[+p[1]]; if(p[2]==="0") x[0]=val; else if(p[2]==="1") x[1]=+val; else x[2]=val.split("\n").map(s=>s.trim()).filter(Boolean) }
+  else if(p[0]==="ls"){ const l=b.lessons[+p[1]]; if(p[2]==="0") l[0]=val; else if(p[2]==="1") l[1]=Math.max(1,+val||1); else l[2]= val.trim()?{url:val.trim()}:(l[2]&&l[2].id?l[2]:null) }
+  else if(p[0]==="rs") b.resources[+p[1]].name=val;
+  else if(p[0]==="ghl") b.ghl[p[1]]=val;
+  else b[p[0]]=val;
+}
+function queueSave(){ clearTimeout(saveT); const s=$("#saveState"); if(s) s.textContent="Saving…"; saveT=setTimeout(()=>{ saveCatalog(); const s2=$("#saveState"); if(s2) s2.textContent="All changes saved" },400) }
+document.addEventListener("input",e=>{
+  const el=e.target;
+  if(el.dataset.f&&el.dataset.b){ const b=B(el.dataset.b); if(b){ setPath(b,el.dataset.f,el.value); queueSave() } }
+  else if(el.dataset.site){ SITE[el.dataset.site]=el.value; saveSite(); const s=$("#saveState"); if(s) s.textContent="All changes saved" }
+});
+document.addEventListener("change",e=>{
+  const el=e.target;
+  if(el.dataset.f&&["title","series"].includes(el.dataset.f)){ const b=B(el.dataset.b); hist(b,"Edited details"); saveCatalog(); const h=document.querySelector(".ed-head h1"), ey=document.querySelector(".ed-head .eyebrow"); if(h) h.textContent=b.title; if(ey) ey.textContent=b.series||"New title" }
+  if(el.dataset&&el.dataset.up){ const files=[...el.files]; el.value=""; if(files.length) handleUpload(el.dataset.up,files) }
+});
+document.addEventListener("dragover",e=>{ const z=e.target.closest&&e.target.closest("[data-drop]"); if(z){ e.preventDefault(); z.classList.add("over") } });
+document.addEventListener("dragleave",e=>{ const z=e.target.closest&&e.target.closest("[data-drop]"); if(z) z.classList.remove("over") });
+document.addEventListener("drop",e=>{ const z=e.target.closest&&e.target.closest("[data-drop]"); if(z){ e.preventDefault(); z.classList.remove("over"); handleUpload(z.dataset.drop,[...e.dataTransfer.files]) } });
+
+async function storeFile(f){ const id="f"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); await idbPut(id,f); URLS[id]=URL.createObjectURL(f); return {id,name:f.name,size:f.size,type:f.type,at:now()} }
+function mediaDuration(f,tag){ return new Promise(res=>{ const el=document.createElement(tag); let done=false; const fin=v=>{ if(!done){ done=true; res(v) } }; el.preload="metadata"; el.onloadedmetadata=()=>fin(isFinite(el.duration)?el.duration:0); el.onerror=()=>fin(0); el.src=URL.createObjectURL(f); setTimeout(()=>fin(0),8000) }) }
+async function handleUpload(kind,files){
+  const [k,id,ix]=kind.split(":"), b=id?B(id):null, i=+ix;
+  toast(files.length>1?`Uploading ${files.length} files…`:"Uploading…");
+  if(k==="welcome"){ const had=!!SITE.welcome; const m=await storeFile(files[0]); m.dur=await mediaDuration(files[0],"video"); SITE.welcome=m; saveSite(); render(); toast(had?"Welcome video replaced":"Welcome video uploaded"); return }
+  let msg="Saved";
+  if(k==="cover"){ const had=!!(b.coverFile||b.cover); b.coverFile=await storeFile(files[0]); hist(b,`${had?"Replaced":"Uploaded"} cover · ${files[0].name}`); msg=had?"Cover replaced":"Cover uploaded" }
+  if(k==="pdf"||k==="wbpdf"){ const label=k==="pdf"?"ebook PDF":"printable workbook"; const old=b.files[k]; const m=await storeFile(files[0]); if(old) (b.versions[k]=b.versions[k]||[]).unshift(old); b.files[k]=m; hist(b,`${old?"Replaced":"Uploaded"} ${label} · ${m.name}`); msg=old?"Replaced. Students get the new version now.":"Uploaded" }
+  if(k==="ch"){ const c=b.chapters[i], had=!!c[3]; const m=await storeFile(files[0]); m.dur=await mediaDuration(files[0],"audio"); c[3]=m; if(m.dur) c[1]=m.dur/60; hist(b,`${had?"Replaced":"Uploaded"} audio for ${chLabel(i).toLowerCase()} · ${m.name}`); msg=had?"Audio replaced. Students keep their place.":"Audio uploaded" }
+  if(k==="bulk"){ const fs=files.filter(f=>/^audio\//.test(f.type)||/\.(mp3|m4a|m4b|wav|aac|ogg)$/i.test(f.name)).sort((x,y)=>x.name.localeCompare(y.name,undefined,{numeric:true}));
+    if(!fs.length){ toast("Those don't look like audio files. Use MP3 or M4A."); return }
+    for(let j=0;j<fs.length;j++){ const m=await storeFile(fs[j]); m.dur=await mediaDuration(fs[j],"audio"); if(!b.chapters[j]) b.chapters.push([fs[j].name.replace(/\.[^.]+$/,"").replace(/^[\d\s._-]+/,"").replace(/[-_]+/g," ")||"Chapter "+j,10]); b.chapters[j][3]=m; if(m.dur) b.chapters[j][1]=m.dur/60 }
+    hist(b,`Bulk uploaded ${fs.length} audio file${fs.length>1?"s":""}`); msg=`${fs.length} chapter${fs.length>1?"s":""} uploaded` }
+  if(k==="lesson"){ const l=b.lessons[i], had=!!(l[2]&&l[2].id); const m=await storeFile(files[0]); m.dur=await mediaDuration(files[0],"video"); l[2]=m; if(m.dur) l[1]=Math.max(1,Math.round(m.dur/60)); hist(b,`${had?"Replaced":"Uploaded"} video for lesson ${i+1} · ${m.name}`); msg=had?"Lesson video replaced":"Lesson video uploaded" }
+  if(k==="res"){ const r=b.resources[i], had=!!r.file; r.file=await storeFile(files[0]); if(!r.name||r.name==="New resource") r.name=files[0].name.replace(/\.[^.]+$/,""); hist(b,`${had?"Replaced":"Uploaded"} resource · ${files[0].name}`); msg=had?"Resource replaced":"Resource uploaded" }
+  saveCatalog(); render(); toast(msg);
+}
+function openPreview(id,k){
+  const u=URLS[id]; if(!u){ toast("That file isn't stored in this browser"); return }
+  $("#modal").innerHTML=`<h3>Preview</h3>${k==="audio"?`<audio controls autoplay src="${u}" style="width:100%"></audio>`:`<video controls autoplay playsinline src="${u}" style="width:100%;border-radius:8px;background:#000"></video>`}<div class="row"><button class="btn" id="mCancel">Close</button></div>`;
+  $("#modal").hidden=false; $("#mscrim").hidden=false;
+}
+const stopMedia=()=>$("#modal").querySelectorAll("audio,video").forEach(m=>m.pause());
+$("#mscrim").addEventListener("click",stopMedia);
+document.addEventListener("click",e=>{ if(e.target.closest("#mCancel")) stopMedia() },true);
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-a]"); if(!t) return;
+  const a=t.dataset.a, h=location.hash.slice(1), b=h.startsWith("admin-")?B(h.slice(6)):null;
+  if(a==="home"){ location.hash="admin"; return }
+  if(a==="newtitle"){ const id="t"+Date.now().toString(36); const nb=normalize({id,title:"Untitled book",sub:"for Financial Advisors",series:"",tag:"",cover:"",status:"draft",chapters:[["Introduction",10]],course:"",lessons:[["Welcome & how to use this course",6]],workbook:[],resources:[]}); nb.course="Untitled course"; hist(nb,"Created title"); BOOKS.push(nb); saveCatalog(); admSec="details"; location.hash="admin-"+id; setTimeout(()=>{ const f=document.querySelector('[data-f="title"]'); if(f){ f.focus(); f.select() } },60); return }
+  if(a==="reset"){ confirmReset=true; render(); return } if(a==="resetno"){ confirmReset=false; render(); return }
+  if(a==="resetyes"){ BOOKS=JSON.parse(JSON.stringify(DEFAULT_BOOKS)).map(normalize); saveCatalog(); confirmReset=false; render(); toast("Sample catalog restored"); return }
+  if(!b) return;
+  if(a==="sec"){ admSec=t.dataset.v; confirmDel=null; render(); return }
+  if(a==="status"){ if(b.status!==t.dataset.v){ b.status=t.dataset.v; hist(b,t.dataset.v==="draft"?"Moved to draft":"Published"); saveCatalog(); render(); toast(t.dataset.v==="draft"?"Hidden from students":"Live in the library") } return }
+  if(a==="del"){ confirmDel=b.id; render(); return } if(a==="delno"){ confirmDel=null; render(); return }
+  if(a==="delyes"){ BOOKS=BOOKS.filter(x=>x!==b); saveCatalog(); confirmDel=null; location.hash="admin"; toast("Title deleted"); return }
+  if(a==="rmcover"){ b.coverFile=null; hist(b,"Went back to the original cover"); saveCatalog(); render(); return }
+  if(a==="prev"){ openPreview(t.dataset.id,t.dataset.k); return }
+  if(a==="restore"){ const k=t.dataset.k, i=+t.dataset.i; const old=b.versions[k].splice(i,1)[0]; if(b.files[k]) b.versions[k].unshift(b.files[k]); b.files[k]=old; hist(b,`Restored ${t.dataset.l} · ${old.name}`); saveCatalog(); render(); toast("Previous version restored"); return }
+  if(a==="add"){ const k=t.dataset.k;
+    if(k==="ch") b.chapters.push(["Chapter "+b.chapters.length,10]);
+    if(k==="wb") b.workbook.push(["New exercise",0,["Your question"]]);
+    if(k==="ls") b.lessons.push(["New lesson",8]);
+    if(k==="rs") b.resources.push({name:"New resource"});
+    hist(b,"Added "+({ch:"a chapter",wb:"an exercise",ls:"a lesson",rs:"a resource"})[k]); saveCatalog(); render();
+    const rows=document.querySelectorAll(".erow"); const last=rows[rows.length-1]; if(last){ last.scrollIntoView({block:"center"}); const f=last.querySelector("input"); if(f){ f.focus(); f.select() } } return }
+  if(a==="up"||a==="down"||a==="rm"){ const k=t.dataset.k, arr=listOf(b,k), i=+t.dataset.i;
+    if(a==="rm"){ if((k==="ch"||k==="ls")&&arr.length===1){ toast("A title needs at least one "+(k==="ch"?"chapter":"lesson")); return } arr.splice(i,1); hist(b,"Removed "+({ch:"a chapter",wb:"an exercise",ls:"a lesson",rs:"a resource"})[k]) }
+    else { const j=a==="up"?i-1:i+1; if(j<0||j>=arr.length) return; [arr[i],arr[j]]=[arr[j],arr[i]] }
+    saveCatalog(); render(); return }
+});
+
+render();
+idbLoadAll().then(()=>render());
+</script>
+
+</html>
