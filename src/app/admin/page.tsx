@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/session";
+import Link from "next/link";
 import { coverUrl, type Title } from "@/lib/catalog";
+import { AdminNav } from "@/components/admin/AdminNav";
+import { createTitle } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin · The Anywhere Advisor Library" };
@@ -65,8 +68,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return (
     <main>
       <section style={{ paddingBlock: "28px 20px" }}>
-        <div className="eyebrow">Admin</div>
-        <h1 className="display">Manage your library</h1>
+        <AdminNav current="titles" />
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
+          <h1 className="display">Manage your library</h1>
+          <form action={createTitle}><button className="btn gold" type="submit">+ Add a title</button></form>
+        </div>
         {sp.msg === "granted" && <p className="pill own">Access granted to {sp.to}</p>}
         {sp.msg?.startsWith("grant-") && <p className="error">Enter an email and choose a title.</p>}
       </section>
@@ -79,7 +85,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
 
       <section className="block">
-        <div className="sec-head"><h2>Titles</h2><span className="muted">Uploads and the title editor arrive in the next build</span></div>
+        <div className="sec-head"><h2>Titles</h2><span className="muted">Open a title to upload files and edit its content</span></div>
         <div className="tlist">
           {titles.map((t) => {
             const a = t.chapters.filter((c) => c.audio_file_id).length;
@@ -87,7 +93,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             const pdf = t.title_files.some((f) => f.kind === "ebook_pdf" && f.is_current);
             const chip = (ok: boolean, label: string) => <span className={`chip ${ok ? "" : "off"}`}>{ok ? "✓" : "○"} {label}</span>;
             return (
-              <div className="trow" key={t.id}>
+              <Link className="trow" href={`/admin/titles/${t.id}`} key={t.id}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={coverUrl(t)} alt="" />
                 <span style={{ minWidth: 0 }}>
@@ -104,8 +110,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     {chip(t.resources.length > 0 && t.resources.every((r) => r.file_id), `Resources ${t.resources.filter((r) => r.file_id).length}/${t.resources.length}`)}
                   </span>
                 </span>
-                <span className="mono muted">/{t.slug}</span>
-              </div>
+                <span className="btn sm">Edit</span>
+              </Link>
             );
           })}
         </div>

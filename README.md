@@ -42,7 +42,17 @@ A Next.js app in `src/`, backed by Supabase.
 | `/login` | Email sign-in link, no password |
 | `/library` | The student's library: every live title, showing what they own |
 | `/library/[slug]` | A title's chapters, lessons, exercises and resources |
-| `/admin` | Staff only: title checklist, students count, give a student access, recent changes |
+| `/library/[slug]/workbook` | Guided workbook: answers autosave, progress bar, "Download as PDF" |
+| `/library/[slug]/course/[lessonId]` | Course player: video, lesson list with checkmarks, "Complete & continue" |
+| `/admin` | Staff only: every title with a checklist of what's missing; add a title |
+| `/admin/titles/[id]` | Title editor: details, cover, ebook (PDF/EPUB with version history), audiobook (per-chapter or bulk upload, reorder, end-of-chapter calls-to-action), workbook, course (upload or video link), resources, GHL offers, change history |
+| `/admin/students` | Every student, which titles and courses they have (tick to give or remove), progress, last active |
+| `/admin/settings` | Welcome video and the booking calendar link |
+| `GET /api/media/...` | Checks access, then hands out a short-lived link to a private file |
+
+**Audiobook player:** a persistent player bar on every library page; it resumes on any device, with speed control (0.75×–2.5×), a sleep timer (minutes or end of chapter), skip back 15 and forward 30, chapter list, timestamped notes, lock-screen and headphone controls, and keyboard shortcuts (Space, ←, →). The first chapter is a free sample for students who don't own the book.
+
+**Uploads** go straight from the browser to Supabase Storage (resumable), up to the project's file limit (currently 50 MB). For longer course videos, paste a Vimeo, Wistia, Bunny or unlisted YouTube link.
 | `POST /api/ghl/purchase` | GoHighLevel purchase webhook (see below) |
 
 Database: `supabase/migrations/0001_init.sql` (tables, row-level security, storage buckets) and `supabase/seed.sql` (the three launch titles).
