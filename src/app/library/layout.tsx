@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { coverUrl } from "@/lib/catalog";
-import type { BookAudio } from "@/lib/book";
+import { toChapters, type BookAudio } from "@/lib/book";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { MiniPlayer } from "@/components/player/Player";
 
@@ -22,7 +22,7 @@ export default async function LibraryLayout({ children }: { children: React.Reac
       db.from("entitlements").select("kind").eq("user_id", profile.id).eq("title_id", last.title_id),
       db.from("site_settings").select("booking_url").eq("id", 1).maybeSingle(),
     ]);
-    const chapters = (ch ?? []).map((c) => ({ id: c.id, position: c.position, name: c.name, duration: Number(c.duration_seconds ?? 0), hasAudio: !!c.audio_file_id, cta: c.cta }));
+    const chapters = toChapters(ch ?? []);
     const index = chapters.findIndex((c) => c.id === last.chapter_id);
     if (t && index >= 0) {
       resume = {

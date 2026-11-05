@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { BookData } from "@/lib/book";
 import { PlayButton } from "@/components/player/PlayButton";
 import { usePlayer } from "@/components/player/PlayerProvider";
-import { chLabel, clock } from "@/components/player/Player";
+import { clock, trackNo } from "@/components/player/Player";
 
 const hm = (sec: number) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)} hr ${m % 60} min` : `${m} min`; };
 
@@ -40,7 +40,7 @@ export function BookView({ d }: { d: BookData }) {
           {!d.ownsBook && (
             <div className="row" style={{ marginBottom: 16 }}>
               {b.orderUrl ? <a className="btn gold" href={b.orderUrl} target="_blank" rel="noopener">Unlock the book</a> : null}
-              <PlayButton book={b} index={0} label="Listen to the free chapter" className="btn ghost" />
+              <PlayButton book={b} index={0} label="Listen to the free sample" className="btn ghost" />
             </div>
           )}
 
@@ -59,7 +59,7 @@ export function BookView({ d }: { d: BookData }) {
               <div className="k">Audiobook</div>
               <div className="v">{audioReady ? (d.progress ? `${listenedPct}% · ${hm(Math.max(0, total - before - d.progress.position_seconds))} left` : hm(total)) : "Recording coming soon"}</div>
               <div className="bar"><i style={{ width: `${listenedPct}%` }} /></div>
-              <PlayButton book={b} index={d.ownsBook ? resumeIdx : 0} position={d.ownsBook ? d.progress?.position_seconds ?? 0 : 0} label={d.progress && d.ownsBook ? "Resume" : d.ownsBook ? "Listen" : "Free chapter"} className="btn sm" />
+              <PlayButton book={b} index={d.ownsBook ? resumeIdx : 0} position={d.ownsBook ? d.progress?.position_seconds ?? 0 : 0} label={d.progress && d.ownsBook ? "Resume" : d.ownsBook ? "Listen" : "Free sample"} className="btn sm" />
             </div>
             <div className={`f4 ${d.ownsBook ? "" : "locked"}`}>
               <div className="k">Workbook</div>
@@ -91,14 +91,14 @@ export function BookView({ d }: { d: BookData }) {
             const pos = p.book?.titleId === b.titleId && p.index === i ? p.position : d.progress?.chapter_id === c.id ? d.progress.position_seconds : 0;
             return (
               <li key={c.id} className={isNow ? "now" : ""}>
-                <span className="n">{c.position === 0 ? "Intro" : c.position}</span>
+                <span className="n">{trackNo(c.position)}</span>
                 <div style={{ minWidth: 0 }}>
                   <div className="t">{c.name}</div>
                   <div className="sub2">
                     <span className="mono">{clock(c.duration)}</span>
                     {done && <span className="done">✓ Finished</span>}
                     {!done && pos > 0 && <span className="bar mini2"><i style={{ width: `${(pos / Math.max(1, c.duration)) * 100}%` }} /></span>}
-                    {!d.ownsBook && i === 0 && <span className="pill sample">Free sample</span>}
+                    {!d.ownsBook && c.free && <span className="pill sample">Free sample</span>}
                     {!c.hasAudio && <span className="muted">Audio coming soon</span>}
                   </div>
                 </div>
@@ -131,7 +131,7 @@ export function BookView({ d }: { d: BookData }) {
               if (ci < 0) return null;
               return (
                 <div className="note" key={n.id}>
-                  <button type="button" className="stamp" onClick={() => { p.load(b, ci, n.position_seconds, true); p.setExpanded(true); }}>{chLabel(b.chapters[ci].position)} · {clock(n.position_seconds)}</button>
+                  <button type="button" className="stamp" onClick={() => { p.load(b, ci, n.position_seconds, true); p.setExpanded(true); }}>{b.chapters[ci].name} · {clock(n.position_seconds)}</button>
                   <p>{n.body}</p>
                   <button type="button" className="x" onClick={() => p.deleteNote(n.id).then(() => location.reload())} aria-label="Delete note">×</button>
                 </div>

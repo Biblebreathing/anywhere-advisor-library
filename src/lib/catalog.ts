@@ -21,6 +21,15 @@ export type TitleWithCounts = Title & {
 export const TITLE_WITH_COUNTS =
   "id, slug, title, subtitle, series, description, status, cover_path, course_name, sort_order, chapters(count), exercises(count), lessons(count), resources(count)";
 
+/**
+ * The free sample: everything before "Chapter 1" (title, dedication, introduction…), like an Audible sample.
+ * If no track is named "Chapter 1", only the first track is free.
+ */
+export function freeTrackCount(names: string[]) {
+  const i = names.findIndex((n) => /^chapter\s*(1|one)\b/i.test(n.trim()));
+  return i > 0 ? i : 1;
+}
+
 export const count = (rel: { count: number }[] | undefined) => rel?.[0]?.count ?? 0;
 
 /** Bundled covers live in /public/covers; uploaded ones in the public "covers" storage bucket. */

@@ -35,7 +35,7 @@ const clock = (s: number | null) => {
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`;
 };
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-const chLabel = (p: number) => (p === 0 ? "Introduction" : `Chapter ${p}`);
+const trackNo = (p: number) => String(p + 1).padStart(2, "0");
 
 /** Saves on blur when the value changed; shows errors inline. */
 function Field({
@@ -219,7 +219,7 @@ export function TitleEditor({ data, initialSection }: { data: EditorData; initia
           {sec === "audio" && (
             <>
               <h2 className="ph2">Audiobook</h2>
-              <p className="muted">One MP3 or M4A per chapter. Replacing a file keeps every student's place and notes. The introduction is the free sample.</p>
+              <p className="muted">One MP3 or M4A per chapter. Replacing a file keeps every student's place and notes. Everything before the track named “Chapter 1” is the free sample (title, dedication, introduction…).</p>
               <DropZone
                 accept="audio/*,.mp3,.m4a,.m4b,.wav"
                 target={(i) => (data.chapters[i] ? { kind: "chapter", titleId: t.id, itemId: data.chapters[i].id } : { kind: "chapter-new", titleId: t.id })}
@@ -230,7 +230,7 @@ export function TitleEditor({ data, initialSection }: { data: EditorData; initia
               <div className="rows">
                 {data.chapters.map((c, i) => (
                   <div className="erow" key={c.id}>
-                    <span className="n">{c.position === 0 ? "Intro" : c.position}</span>
+                    <span className="n">{trackNo(c.position)}</span>
                     <div className="ecol">
                       <Field value={c.name} label={undefined} placeholder="Chapter title" onSave={(v) => updateItem("chapters", c.id, { name: v })} />
                       <FileLine file={c.file} preview={c.file ? `/api/media/chapter/${c.id}` : undefined} onRemove={c.file ? () => start(() => removeFile({ kind: "chapter", itemId: c.id })) : undefined} />
@@ -267,7 +267,7 @@ export function TitleEditor({ data, initialSection }: { data: EditorData; initia
                         <span>Goes with</span>
                         <select className="inp" defaultValue={x.chapter_id ?? ""} onChange={(e) => start(() => updateItem("exercises", x.id, { chapter_id: e.target.value || null }))}>
                           <option value="">No specific chapter</option>
-                          {data.chapters.map((c) => <option key={c.id} value={c.id}>{chLabel(c.position)}: {c.name}</option>)}
+                          {data.chapters.map((c) => <option key={c.id} value={c.id}>{trackNo(c.position)}. {c.name}</option>)}
                         </select>
                       </label>
                       <Field label="Questions, one per line" area value={x.questions.join("\n")} onSave={(v) => updateItem("exercises", x.id, { questions: v.split("\n").map((q) => q.trim()).filter(Boolean) })} />

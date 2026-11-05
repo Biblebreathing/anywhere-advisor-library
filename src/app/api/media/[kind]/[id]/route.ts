@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { freeTrackCount } from "@/lib/catalog";
 
 /**
  * Hands out a short-lived signed link to a private file, after checking the student may have it.
  *
- *   /api/media/chapter/:chapterId      audiobook chapter (first chapter is a free sample)
+ *   /api/media/chapter/:chapterId      audiobook track (tracks before "Chapter 1" are the free sample)
  *   /api/media/lesson/:lessonId        course video (first lesson is a free preview)
  *   /api/media/resource/:resourceId    template / checklist / prompt pack
  *   /api/media/ebook/:titleId          current ebook PDF
@@ -45,7 +46,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
   if (kind === "chapter") {
     const { data: c } = await db.from("chapters").select("title_id, position, audio_file_id").eq("id", id).maybeSingle();
     if (!c?.audio_file_id) return NextResponse.json({ error: "No audio yet" }, { status: 404 });
-    if (!(c.position === 0 && auth.user) && !(await owns(c.title_id, "book"))) return deny();
+    // The free sample is every track before "Chapter 1" (signed-in students only).
+    const { data: names } = await db.from("chapters").select("name").eq("title_id", c.title_id).order("position");
+    const free = c.position < freeTrackCount((names ?? []).map((n) => n.name));
+    if (!(free && auth.user) && !(await owns(c.title_id, "book"))) return deny();
     fileId = c.audio_file_id;
   } else if (kind === "lesson") {
     const { data: l } = await db.from("lessons").select("title_id, position, video_file_id, video_url").eq("id", id).maybeSingle();

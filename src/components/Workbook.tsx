@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { BookData } from "@/lib/book";
 import { PlayButton } from "@/components/player/PlayButton";
-import { chLabel } from "@/components/player/Player";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -89,7 +88,7 @@ export function Workbook({ d, userId }: { d: BookData; userId: string }) {
                 <span className="exn mono">{pad(i + 1)}</span>
                 <span style={{ minWidth: 0 }}>
                   <b>{x.name}</b>
-                  {ch >= 0 && <span className="muted small"> · with {chLabel(b.chapters[ch].position).toLowerCase()}</span>}
+                  {ch >= 0 && <span className="muted small"> · with “{b.chapters[ch].name}”</span>}
                 </span>
                 <span className={`chk ${complete[x.id] ? "on" : ""}`}>{complete[x.id] ? "✓" : ""}</span>
               </button>

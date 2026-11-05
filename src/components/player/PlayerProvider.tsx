@@ -60,7 +60,7 @@ export function PlayerProvider({ userId, resume, children }: { userId: string; r
 
   const canPlay = useCallback((i: number) => {
     const b = st.current.book;
-    return !!b && !!b.chapters[i]?.hasAudio && (b.owned || i === 0);
+    return !!b && !!b.chapters[i]?.hasAudio && (b.owned || !!b.chapters[i]?.free);
   }, []);
 
   /* ---- persistence ---- */
@@ -84,7 +84,7 @@ export function PlayerProvider({ userId, resume, children }: { userId: string; r
     const ch = book.chapters[index];
     if (!ch) return;
     if (!ch.hasAudio) return set((p) => ({ ...p, error: "This chapter's audio is coming soon." }));
-    if (!book.owned && index !== 0) return set((p) => ({ ...p, error: "Unlock the book to keep listening." }));
+    if (!book.owned && !ch.free) return set((p) => ({ ...p, error: "Unlock the book to keep listening." }));
     const sameBook = st.current.book?.titleId === book.titleId;
     if (st.current.book && st.current.playing) save(true);
     pendingSeek.current = position;
@@ -128,10 +128,11 @@ export function PlayerProvider({ userId, resume, children }: { userId: string; r
       track(`aa-${book.slug}-ch${pad(ch.position)}-complete`, book.titleId);
       const last = index === book.chapters.length - 1;
       if (last && book.owned) track(`aa-${book.slug}-audiobook-finished`, book.titleId);
-      if (!book.owned && index === 0) track(`aa-${book.slug}-sample-finished`, book.titleId);
-      set((p) => ({ ...p, cta: book.owned ? ch.cta : "unlock" }));
       const next = index + 1;
-      const nextOk = next < book.chapters.length && book.chapters[next].hasAudio && book.owned;
+      const nextOk = next < book.chapters.length && book.chapters[next].hasAudio && (book.owned || book.chapters[next].free);
+      const sampleOver = !book.owned && !nextOk;
+      if (sampleOver) track(`aa-${book.slug}-sample-finished`, book.titleId);
+      set((p) => ({ ...p, cta: sampleOver ? "unlock" : book.owned ? ch.cta : null }));
       if (sleep.mode === "chapter") { set((p) => ({ ...p, sleep: { mode: "off" } })); if (nextOk) load(book, next, 0, false); return; }
       if (nextOk) load(book, next, 0, true);
       else save(true);

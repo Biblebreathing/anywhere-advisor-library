@@ -7,7 +7,7 @@ export const clock = (sec: number) => {
   const s = Math.max(0, Math.floor(sec || 0)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`;
 };
-export const chLabel = (p: number) => (p === 0 ? "Introduction" : `Chapter ${p}`);
+export const trackNo = (p: number) => String(p + 1).padStart(2, "0");
 
 const Icon = {
   play: <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>,
@@ -86,7 +86,7 @@ function FullPlayer() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={b.cover} alt="" />
             <div style={{ minWidth: 0 }}>
-              <div className="muted small">{b.title} · {chLabel(ch.position)}</div>
+              <div className="muted small">{b.title} · Track {p.index + 1} of {b.chapters.length}</div>
               <h2>{ch.name}</h2>
               <div className="muted small">{Math.floor(left / 3600) ? `${Math.floor(left / 3600)} hr ` : ""}{Math.round((left % 3600) / 60)} min left in book</div>
             </div>
@@ -138,7 +138,7 @@ function FullPlayer() {
             <div className="cta-box">
               {p.cta === "unlock" ? (
                 <>
-                  <b>That was the free chapter</b>
+                  <b>That was the free sample</b>
                   <p className="muted">Unlock the full audiobook, ebook and workbook to keep going.</p>
                   {b.orderUrl ? <a className="btn gold sm" href={b.orderUrl} target="_blank" rel="noopener">Unlock {b.title}</a> : <a className="btn gold sm" href={`/library/${b.slug}`}>See how to unlock</a>}
                 </>
@@ -162,7 +162,7 @@ function FullPlayer() {
                 const ok = p.canPlay(i);
                 return (
                   <li key={c.id} className={i === p.index ? "now" : ""}>
-                    <span className="n">{c.position === 0 ? "Intro" : c.position}</span>
+                    <span className="n">{trackNo(c.position)}</span>
                     <button type="button" className="chbtn" disabled={!ok} onClick={() => p.goChapter(i)}>{c.name}{!c.hasAudio ? " · coming soon" : !ok ? " · 🔒︎" : ""}</button>
                     <span className="mono muted small">{clock(c.duration)}</span>
                   </li>
@@ -175,7 +175,7 @@ function FullPlayer() {
                 const ci = b.chapters.findIndex((c) => c.id === n.chapter_id);
                 return (
                   <div className="note" key={n.id}>
-                    <button type="button" className="stamp" onClick={() => (ci === p.index ? p.seek(n.position_seconds) : p.load(b, ci, n.position_seconds))}>{chLabel(b.chapters[ci].position)} · {clock(n.position_seconds)}</button>
+                    <button type="button" className="stamp" onClick={() => (ci === p.index ? p.seek(n.position_seconds) : p.load(b, ci, n.position_seconds))}>{b.chapters[ci].name} · {clock(n.position_seconds)}</button>
                     <p>{n.body}</p>
                     <button type="button" className="x" onClick={() => p.deleteNote(n.id)} aria-label="Delete note">×</button>
                   </div>

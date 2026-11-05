@@ -2,9 +2,9 @@ import "server-only";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { coverUrl } from "@/lib/catalog";
+import { coverUrl, freeTrackCount } from "@/lib/catalog";
 
-export type BookChapter = { id: string; position: number; name: string; duration: number; hasAudio: boolean; cta: string | null };
+export type BookChapter = { id: string; position: number; name: string; duration: number; hasAudio: boolean; cta: string | null; free: boolean };
 export type BookAudio = {
   titleId: string; slug: string; title: string; cover: string; owned: boolean; bookingUrl: string | null; orderUrl: string | null;
   chapters: BookChapter[];
@@ -23,6 +23,12 @@ export type BookData = {
   files: { ebook: boolean; epub: boolean; workbook: boolean };
   notes: { id: string; chapter_id: string; position_seconds: number; body: string; created_at: string }[];
 };
+
+type ChapterRow = { id: string; position: number; name: string; duration_seconds: number | null; audio_file_id: string | null; cta: string | null };
+export function toChapters(rows: ChapterRow[]): BookChapter[] {
+  const free = freeTrackCount(rows.map((r) => r.name));
+  return rows.map((c, i) => ({ id: c.id, position: c.position, name: c.name, duration: Number(c.duration_seconds ?? 0), hasAudio: !!c.audio_file_id, cta: c.cta, free: i < free }));
+}
 
 /** Everything a student page needs for one title, read as the student (row-level security applies). */
 export async function loadBook(slug: string, userId: string): Promise<BookData> {
@@ -61,7 +67,7 @@ export async function loadBook(slug: string, userId: string): Promise<BookData> 
     audio: {
       titleId: t.id, slug: t.slug, title: t.title, cover: coverUrl(t), owned: ownsBook,
       bookingUrl: site.data?.booking_url ?? null, orderUrl: t.ghl_order_url || t.sales_url || null,
-      chapters: (ch.data ?? []).map((c) => ({ id: c.id, position: c.position, name: c.name, duration: Number(c.duration_seconds ?? 0), hasAudio: !!c.audio_file_id, cta: c.cta })),
+      chapters: toChapters(ch.data ?? []),
     },
     title: { id: t.id, slug: t.slug, title: t.title, subtitle: t.subtitle, series: t.series, description: t.description, course_name: t.course_name, status: t.status },
     ownsBook, ownsCourse,

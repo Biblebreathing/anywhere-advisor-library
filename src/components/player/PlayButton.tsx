@@ -11,7 +11,7 @@ export function PlayButton({
   const p = usePlayer();
   const ch = book.chapters[index];
   const isCurrent = p.book?.titleId === book.titleId && p.index === index;
-  const ok = !!ch?.hasAudio && (book.owned || index === 0);
+  const ok = !!ch?.hasAudio && (book.owned || ch.free);
   return (
     <button
       type="button"

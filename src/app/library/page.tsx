@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
 import { TITLE_WITH_COUNTS, count, coverUrl, type TitleWithCounts } from "@/lib/catalog";
-import type { BookAudio } from "@/lib/book";
+import { toChapters, type BookAudio } from "@/lib/book";
 import { PlayButton } from "@/components/player/PlayButton";
 import { Cover } from "../Cover";
 
@@ -30,7 +30,7 @@ export default async function LibraryPage() {
   if (last) {
     const t = list.find((x) => x.id === last.title_id)!;
     const { data: ch } = await supabase.from("chapters").select("id, position, name, duration_seconds, audio_file_id, cta").eq("title_id", t.id).order("position");
-    const chapters = (ch ?? []).map((c) => ({ id: c.id, position: c.position, name: c.name, duration: Number(c.duration_seconds ?? 0), hasAudio: !!c.audio_file_id, cta: c.cta }));
+    const chapters = toChapters(ch ?? []);
     const index = Math.max(0, chapters.findIndex((c) => c.id === last.chapter_id));
     const total = chapters.reduce((a, c) => a + c.duration, 0);
     const before = chapters.slice(0, index).reduce((a, c) => a + c.duration, 0) + Number(last.position_seconds);
@@ -52,7 +52,7 @@ export default async function LibraryPage() {
           <div style={{ minWidth: 0 }}>
             <div className="eyebrow">Continue listening</div>
             <h1 className="display" style={{ marginBlock: "6px 8px" }}>{hero.book.title}</h1>
-            <p className="muted" style={{ margin: "0 0 12px" }}>{hero.index === 0 ? "Introduction" : `Chapter ${hero.index}`}: {hero.chapterName} · {hm(hero.left)} left</p>
+            <p className="muted" style={{ margin: "0 0 12px" }}>{hero.chapterName} · {hm(hero.left)} left</p>
             <div className="bar" style={{ maxWidth: 420, marginBottom: 16 }}><i style={{ width: `${hero.pct}%` }} /></div>
             <div className="row">
               <PlayButton book={hero.book} index={hero.index} position={hero.pos} label="Resume" className="btn gold" />
