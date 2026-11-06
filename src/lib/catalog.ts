@@ -22,11 +22,12 @@ export const TITLE_WITH_COUNTS =
   "id, slug, title, subtitle, series, description, status, cover_path, course_name, sort_order, chapters(count), exercises(count), lessons(count), resources(count)";
 
 /**
- * The free sample: everything before "Chapter 1" (title, dedication, introduction…), like an Audible sample.
+ * The free sample: everything before the first track that mentions "Chapter 1" or "Chapter One"
+ * (title, dedication, introduction…), like an Audible sample.
  * If no track is named "Chapter 1", only the first track is free.
  */
 export function freeTrackCount(names: string[]) {
-  const i = names.findIndex((n) => /^chapter\s*(1|one)\b/i.test(n.trim()));
+  const i = names.findIndex((n) => /\bchapter\s*(1|one)\b/i.test(n));
   return i > 0 ? i : 1;
 }
 
